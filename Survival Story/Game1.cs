@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework;
+﻿using System.Security.Principal;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 
@@ -48,6 +49,8 @@ namespace Survival_Story
             _gligar = Content.Load<Texture2D>("assets/images/gligarSheet");
             //_wooper = Content.Load<Texture2D>("images/wooperSheet");
 
+            
+
             timer = 0;
 
             threshold = 250;
@@ -67,7 +70,6 @@ namespace Survival_Story
                 sheetX = 0;
                 sheetY += gligarHeight;
             }
-
             previousAnimationIndex = 2;
             currentAnimationIndex = 1;
 
