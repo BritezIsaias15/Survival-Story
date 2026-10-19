@@ -1,4 +1,4 @@
-﻿using System.Security.Principal;
+using System.Security.Principal;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -22,6 +22,7 @@ namespace Survival_Story
         int threshold;
 
         Rectangle[,] gligarRectangle;
+        Rectangle[,] wooperRectangle;
 
         byte previousAnimationIndex;
         byte currentAnimationIndex;
@@ -47,29 +48,44 @@ namespace Survival_Story
 
             //_background = Content.Load<Texture2D>("Fondo/Fondo");
             _gligar = Content.Load<Texture2D>("assets/images/gligarSheet");
-            //_wooper = Content.Load<Texture2D>("images/wooperSheet");
-
-            
+            _wooper = Content.Load<Texture2D>("assets/images/wooperSheet");
 
             timer = 0;
 
             threshold = 250;
 
             gligarRectangle = new Rectangle[8, 3];
-            int sheetX = 0;
-            int sheetY = 0;
+            int gligarX = 0;
+            int gligarY = 0;
             int gligarWidth = 35;
             int gligarHeight = 36;
             for (int i = 0; i < 8; i++)
             {
                 for (int j = 0; j < 3; j++)
                 {
-                    gligarRectangle[i, j] = new Rectangle(sheetX, sheetY, gligarWidth, gligarHeight);
-                    sheetX += gligarWidth;
+                    gligarRectangle[i, j] = new Rectangle(gligarX, gligarY, gligarWidth, gligarHeight);
+                    gligarX += gligarWidth;
                 }
-                sheetX = 0;
-                sheetY += gligarHeight;
+                gligarX = 0;
+                gligarY += gligarHeight;
             }
+
+            wooperRectangle = new Rectangle[8, 3];
+            int wooperX = 0;
+            int wooperY = 0;
+            int wooperWidth = 27;
+            int wooperHeight = 26;
+            for (int i = 0; i < 8; i++)
+            {
+                for (int j = 0; j < 3; j++)
+                {
+                    gligarRectangle[i, j] = new Rectangle(wooperX, wooperY, wooperWidth, wooperHeight);
+                    wooperX += wooperWidth;
+                }
+                wooperX = 0;
+                wooperY += wooperHeight;
+            }
+
             previousAnimationIndex = 2;
             currentAnimationIndex = 1;
 
