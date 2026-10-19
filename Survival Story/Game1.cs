@@ -1,4 +1,3 @@
-using System.Security.Principal;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -16,8 +15,10 @@ namespace Survival_Story
 
         private Vector2 gligarPosition;
         private Vector2 wooperPosition;
-        private float velocidadGlobal = 5.0f;
+        private float velocidadGlobal = 150.0f; // píxeles por segundo
+
         float timer;
+        float wooperTimer;
 
         int threshold;
 
@@ -28,6 +29,10 @@ namespace Survival_Story
         byte currentAnimationIndex;
         int direction;
 
+        byte wooperPreviousAnimationIndex;
+        byte wooperCurrentAnimationIndex;
+        int wooperDirection;
+
         public Game1()
         {
             _graphics = new GraphicsDeviceManager(this);
@@ -37,7 +42,22 @@ namespace Survival_Story
 
         protected override void Initialize()
         {
-            // TODO: Add your initialization logic here
+            gligarPosition = new Vector2(100, 100);
+            wooperPosition = new Vector2(200, 100);
+
+            timer = 0f;
+            wooperTimer = 0f;
+
+            threshold = 250;
+
+            direction = 0;
+            wooperDirection = 0;
+
+            previousAnimationIndex = 2;
+            currentAnimationIndex = 1;
+
+            wooperPreviousAnimationIndex = 2;
+            wooperCurrentAnimationIndex = 1;
 
             base.Initialize();
         }
@@ -50,10 +70,7 @@ namespace Survival_Story
             _gligar = Content.Load<Texture2D>("assets/images/gligarSheet");
             _wooper = Content.Load<Texture2D>("assets/images/wooperSheet");
 
-            timer = 0;
-
-            threshold = 250;
-
+            // Gligar sheet (8x3)
             gligarRectangle = new Rectangle[8, 3];
             int gligarX = 0;
             int gligarY = 0;
@@ -70,6 +87,7 @@ namespace Survival_Story
                 gligarY += gligarHeight;
             }
 
+            // Wooper sheet (8x3)
             wooperRectangle = new Rectangle[8, 3];
             int wooperX = 0;
             int wooperY = 0;
@@ -79,16 +97,12 @@ namespace Survival_Story
             {
                 for (int j = 0; j < 3; j++)
                 {
-                    gligarRectangle[i, j] = new Rectangle(wooperX, wooperY, wooperWidth, wooperHeight);
+                    wooperRectangle[i, j] = new Rectangle(wooperX, wooperY, wooperWidth, wooperHeight);
                     wooperX += wooperWidth;
                 }
                 wooperX = 0;
                 wooperY += wooperHeight;
             }
-
-            previousAnimationIndex = 2;
-            currentAnimationIndex = 1;
-
         }
 
         protected override void Update(GameTime gameTime)
@@ -96,129 +110,144 @@ namespace Survival_Story
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
 
-            movimientoTeclado(gameTime);
+            movimientoTecladoGligar(gameTime, ref gligarPosition);
+            movimientoTecladoWooper(gameTime, ref wooperPosition);
 
             base.Update(gameTime);
-
         }
 
         protected override void Draw(GameTime gameTime)
         {
-
             GraphicsDevice.Clear(Color.CornflowerBlue);
             _spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp);
 
-            /*_spriteBatch.Draw
-            (_background,
-            new Vector2(-75, 0),
-            null,
-            Color.White,
-            0.0f,
-            Vector2.Zero,
-            2.2f,
-            SpriteEffects.None,
-            0.0f);*/
-
+            // Dibujar gligar
             _spriteBatch.Draw(
-            _gligar,
-            gligarPosition,
-            gligarRectangle[direction, currentAnimationIndex],
-            Color.White,
-            0.0f,               // Rotación
-            Vector2.Zero,       // Origen (pivote)
-            2.0f,       // ESCALA (Aquí cambias el tamaño)
-            SpriteEffects.None, // Efectos de espejo
-            0.0f                // Capa de profundidad
+                _gligar,
+                gligarPosition,
+                gligarRectangle[direction, currentAnimationIndex],
+                Color.White,
+                0.0f,
+                Vector2.Zero,
+                2.0f,
+                SpriteEffects.None,
+                0.0f
+            );
+
+            // Dibujar wooper
+            _spriteBatch.Draw(
+                _wooper,
+                wooperPosition,
+                wooperRectangle[wooperDirection, wooperCurrentAnimationIndex],
+                Color.White,
+                0.0f,
+                Vector2.Zero,
+                2.0f,
+                SpriteEffects.None,
+                0.0f
             );
 
             _spriteBatch.End();
             base.Draw(gameTime);
         }
-        void movimientoTeclado(GameTime gameTime)
+
+        void movimientoTecladoGligar(GameTime gameTime, ref Vector2 personaje)
         {
-            float velocidadMovimiento = velocidadGlobal;
-            KeyboardState teclaPresionada = Keyboard.GetState();
+            KeyboardState ks = Keyboard.GetState();
+            Vector2 movimiento = Vector2.Zero;
 
-            if (teclaPresionada.IsKeyDown(Keys.W) && teclaPresionada.IsKeyDown(Keys.A) && teclaPresionada.IsKeyUp(Keys.D))
+            if (ks.IsKeyDown(Keys.W)) movimiento.Y -= 1;
+            if (ks.IsKeyDown(Keys.S)) movimiento.Y += 1;
+            if (ks.IsKeyDown(Keys.A)) movimiento.X -= 1;
+            if (ks.IsKeyDown(Keys.D)) movimiento.X += 1;
+
+            if (movimiento != Vector2.Zero)
             {
-                gligarPosition.Y -= velocidadGlobal;
-                gligarPosition.X -= velocidadGlobal;
-                direction = 6;
+                movimiento.Normalize();
+                float delta = (float)gameTime.ElapsedGameTime.TotalSeconds;
+                personaje += movimiento * velocidadGlobal * delta;
+
+                if (movimiento.X < 0 && movimiento.Y < 0) direction = 6;
+                else if (movimiento.X > 0 && movimiento.Y < 0) direction = 7;
+                else if (movimiento.X < 0 && movimiento.Y > 0) direction = 4;
+                else if (movimiento.X > 0 && movimiento.Y > 0) direction = 5;
+                else if (movimiento.Y < 0) direction = 1;
+                else if (movimiento.Y > 0) direction = 0;
+                else if (movimiento.X < 0) direction = 2;
+                else if (movimiento.X > 0) direction = 3;
             }
 
-            if (teclaPresionada.IsKeyDown(Keys.W) && teclaPresionada.IsKeyDown(Keys.D) && teclaPresionada.IsKeyUp(Keys.A))
-            {
-                gligarPosition.Y -= velocidadGlobal;
-                gligarPosition.X += velocidadGlobal;
-                direction = 7;
-            }
-
-            if (teclaPresionada.IsKeyDown(Keys.S) && teclaPresionada.IsKeyDown(Keys.A) && teclaPresionada.IsKeyUp(Keys.D))
-            {
-                gligarPosition.Y += velocidadGlobal;
-                gligarPosition.X -= velocidadGlobal;
-                direction = 4;
-            }
-
-            if (teclaPresionada.IsKeyDown(Keys.S) && teclaPresionada.IsKeyDown(Keys.D) && teclaPresionada.IsKeyUp(Keys.A))
-            {
-                gligarPosition.Y += velocidadGlobal;
-                gligarPosition.X += velocidadGlobal;
-                direction = 5;
-            }
-
-            if (teclaPresionada.IsKeyDown(Keys.W) && teclaPresionada.IsKeyUp(Keys.A) && teclaPresionada.IsKeyUp(Keys.D))
-            {
-                gligarPosition.Y -= velocidadGlobal;
-                direction = 1;
-            }
-
-            if (teclaPresionada.IsKeyDown(Keys.S) && teclaPresionada.IsKeyUp(Keys.A) && teclaPresionada.IsKeyUp(Keys.D))
-            {
-                gligarPosition.Y += velocidadGlobal;
-                direction = 0;
-            }
-
-            if (teclaPresionada.IsKeyDown(Keys.A) && teclaPresionada.IsKeyUp(Keys.W) && teclaPresionada.IsKeyUp(Keys.S))
-            {
-                gligarPosition.X -= velocidadGlobal;
-                direction = 2;
-            }
-
-            if (teclaPresionada.IsKeyDown(Keys.D) && teclaPresionada.IsKeyUp(Keys.W) && teclaPresionada.IsKeyUp(Keys.S))
-            {
-                gligarPosition.X += velocidadGlobal;
-                direction = 3;
-            }
-
-            animation(gameTime);
+            animationGligar(gameTime);
         }
 
-        void animation(GameTime gameTime)
+        void movimientoTecladoWooper(GameTime gameTime, ref Vector2 personaje)
+        {
+            KeyboardState ks = Keyboard.GetState();
+            Vector2 movimiento = Vector2.Zero;
+
+            if (ks.IsKeyDown(Keys.Up)) movimiento.Y -= 1;
+            if (ks.IsKeyDown(Keys.Down)) movimiento.Y += 1;
+            if (ks.IsKeyDown(Keys.Left)) movimiento.X -= 1;
+            if (ks.IsKeyDown(Keys.Right)) movimiento.X += 1;
+
+            if (movimiento != Vector2.Zero)
+            {
+                movimiento.Normalize();
+                float delta = (float)gameTime.ElapsedGameTime.TotalSeconds;
+                personaje += movimiento * velocidadGlobal * delta;
+
+                if (movimiento.X < 0 && movimiento.Y < 0) wooperDirection = 6;
+                else if (movimiento.X > 0 && movimiento.Y < 0) wooperDirection = 7;
+                else if (movimiento.X < 0 && movimiento.Y > 0) wooperDirection = 4;
+                else if (movimiento.X > 0 && movimiento.Y > 0) wooperDirection = 5;
+                else if (movimiento.Y < 0) wooperDirection = 1;
+                else if (movimiento.Y > 0) wooperDirection = 0;
+                else if (movimiento.X < 0) wooperDirection = 2;
+                else if (movimiento.X > 0) wooperDirection = 3;
+            }
+
+            animationWooper(gameTime);
+        }
+
+        void animationGligar(GameTime gameTime)
         {
             if (timer > threshold)
             {
                 if (currentAnimationIndex == 1)
                 {
-                    if (previousAnimationIndex == 0)
-                    {
-                        currentAnimationIndex = 2;
-                    }
-                    else
-                    {
-                        currentAnimationIndex = 0;
-                    }
+                    currentAnimationIndex = (previousAnimationIndex == 0) ? (byte)2 : (byte)0;
                     previousAnimationIndex = currentAnimationIndex;
                 }
                 else
                 {
                     currentAnimationIndex = 1;
                 }
-                timer = 0;
+                timer = 0f;
             }
             else
             {
                 timer += (float)gameTime.ElapsedGameTime.TotalMilliseconds;
+            }
+        }
+
+        void animationWooper(GameTime gameTime)
+        {
+            if (wooperTimer > threshold)
+            {
+                if (wooperCurrentAnimationIndex == 1)
+                {
+                    wooperCurrentAnimationIndex = (wooperPreviousAnimationIndex == 0) ? (byte)2 : (byte)0;
+                    wooperPreviousAnimationIndex = wooperCurrentAnimationIndex;
+                }
+                else
+                {
+                    wooperCurrentAnimationIndex = 1;
+                }
+                wooperTimer = 0f;
+            }
+            else
+            {
+                wooperTimer += (float)gameTime.ElapsedGameTime.TotalMilliseconds;
             }
         }
     }
