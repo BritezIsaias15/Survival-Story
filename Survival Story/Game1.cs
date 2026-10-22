@@ -1,4 +1,4 @@
-﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 
@@ -8,30 +8,28 @@ namespace Survival_Story
     {
         private GraphicsDeviceManager _graphics;
         private SpriteBatch _spriteBatch;
-        private Texture2D _background;
 
         private Texture2D _gligar;
         private Texture2D _wooper;
 
         private Vector2 gligarPosition;
         private Vector2 wooperPosition;
-        private float velocidadGlobal = 150.0f; // píxeles por segundo
+        private float velocidadGlobal = 250.0f; // píxeles por segundo
 
-        float timer;
-        float wooperTimer;
+        private float gligarTimer;
+        private float wooperTimer;
+        private int threshold;
 
-        int threshold;
+        private Rectangle[,] gligarRectangle;
+        private Rectangle[,] wooperRectangle;
 
-        Rectangle[,] gligarRectangle;
-        Rectangle[,] wooperRectangle;
+        private byte gligarPreviousAnimationIndex;
+        private byte gligarCurrentAnimationIndex;
+        private int gligarDirection;
 
-        byte previousAnimationIndex;
-        byte currentAnimationIndex;
-        int direction;
-
-        byte wooperPreviousAnimationIndex;
-        byte wooperCurrentAnimationIndex;
-        int wooperDirection;
+        private byte wooperPreviousAnimationIndex;
+        private byte wooperCurrentAnimationIndex;
+        private int wooperDirection;
 
         public Game1()
         {
@@ -45,16 +43,15 @@ namespace Survival_Story
             gligarPosition = new Vector2(100, 100);
             wooperPosition = new Vector2(200, 100);
 
-            timer = 0f;
+            gligarTimer = 0f;
             wooperTimer = 0f;
-
             threshold = 250;
 
-            direction = 0;
+            gligarDirection = 0;
             wooperDirection = 0;
 
-            previousAnimationIndex = 2;
-            currentAnimationIndex = 1;
+            gligarPreviousAnimationIndex = 2;
+            gligarCurrentAnimationIndex = 1;
 
             wooperPreviousAnimationIndex = 2;
             wooperCurrentAnimationIndex = 1;
@@ -66,42 +63,31 @@ namespace Survival_Story
         {
             _spriteBatch = new SpriteBatch(GraphicsDevice);
 
-            //_background = Content.Load<Texture2D>("Fondo/Fondo");
             _gligar = Content.Load<Texture2D>("assets/images/gligarSheet");
             _wooper = Content.Load<Texture2D>("assets/images/wooperSheet");
 
             // Gligar sheet (8x3)
             gligarRectangle = new Rectangle[8, 3];
-            int gligarX = 0;
-            int gligarY = 0;
             int gligarWidth = 35;
             int gligarHeight = 36;
             for (int i = 0; i < 8; i++)
             {
                 for (int j = 0; j < 3; j++)
                 {
-                    gligarRectangle[i, j] = new Rectangle(gligarX, gligarY, gligarWidth, gligarHeight);
-                    gligarX += gligarWidth;
+                    gligarRectangle[i, j] = new Rectangle(j * gligarWidth, i * gligarHeight, gligarWidth, gligarHeight);
                 }
-                gligarX = 0;
-                gligarY += gligarHeight;
             }
 
             // Wooper sheet (8x3)
             wooperRectangle = new Rectangle[8, 3];
-            int wooperX = 0;
-            int wooperY = 0;
             int wooperWidth = 27;
             int wooperHeight = 26;
             for (int i = 0; i < 8; i++)
             {
                 for (int j = 0; j < 3; j++)
                 {
-                    wooperRectangle[i, j] = new Rectangle(wooperX, wooperY, wooperWidth, wooperHeight);
-                    wooperX += wooperWidth;
+                    wooperRectangle[i, j] = new Rectangle(j * wooperWidth, i * wooperHeight, wooperWidth, wooperHeight);
                 }
-                wooperX = 0;
-                wooperY += wooperHeight;
             }
         }
 
@@ -110,8 +96,43 @@ namespace Survival_Story
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
 
+            Vector2 previousGligarPosition = gligarPosition;
+            Vector2 previousWooperPosition = wooperPosition;
+
             movimientoTecladoGligar(gameTime, ref gligarPosition);
             movimientoTecladoWooper(gameTime, ref wooperPosition);
+
+            int gligarWidth = 35 * 2;
+            int gligarHeight = 36 * 2;
+            int wooperWidth = 27 * 2;
+            int wooperHeight = 26 * 2;
+
+            Rectangle bordedepantalla = new Rectangle(
+                0, 0,
+                GraphicsDevice.PresentationParameters.BackBufferWidth,
+                GraphicsDevice.PresentationParameters.BackBufferHeight
+            );
+
+            if (gligarPosition.X < bordedepantalla.Left) gligarPosition.X = bordedepantalla.Left;
+            else if (gligarPosition.X + gligarWidth > bordedepantalla.Right) gligarPosition.X = bordedepantalla.Right - gligarWidth;
+
+            if (gligarPosition.Y < bordedepantalla.Top) gligarPosition.Y = bordedepantalla.Top;
+            else if (gligarPosition.Y + gligarHeight > bordedepantalla.Bottom) gligarPosition.Y = bordedepantalla.Bottom - gligarHeight;
+
+            if (wooperPosition.X < bordedepantalla.Left) wooperPosition.X = bordedepantalla.Left;
+            else if (wooperPosition.X + wooperWidth > bordedepantalla.Right) wooperPosition.X = bordedepantalla.Right - wooperWidth;
+
+            if (wooperPosition.Y < bordedepantalla.Top) wooperPosition.Y = bordedepantalla.Top;
+            else if (wooperPosition.Y + wooperHeight > bordedepantalla.Bottom) wooperPosition.Y = bordedepantalla.Bottom - wooperHeight;
+
+            Rectangle gligarhitbox = new Rectangle((int)gligarPosition.X, (int)gligarPosition.Y, gligarWidth, gligarHeight);
+            Rectangle wooperhitbox = new Rectangle((int)wooperPosition.X, (int)wooperPosition.Y, wooperWidth, wooperHeight);
+
+            if (gligarhitbox.Intersects(wooperhitbox))
+            {
+                gligarPosition = previousGligarPosition;
+                wooperPosition = previousWooperPosition;
+            }
 
             base.Update(gameTime);
         }
@@ -121,37 +142,25 @@ namespace Survival_Story
             GraphicsDevice.Clear(Color.CornflowerBlue);
             _spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp);
 
-            // Dibujar gligar
             _spriteBatch.Draw(
                 _gligar,
                 gligarPosition,
-                gligarRectangle[direction, currentAnimationIndex],
-                Color.White,
-                0.0f,
-                Vector2.Zero,
-                2.0f,
-                SpriteEffects.None,
-                0.0f
+                gligarRectangle[gligarDirection, gligarCurrentAnimationIndex],
+                Color.White, 0.0f, Vector2.Zero, 2.0f, SpriteEffects.None, 0.0f
             );
 
-            // Dibujar wooper
             _spriteBatch.Draw(
                 _wooper,
                 wooperPosition,
                 wooperRectangle[wooperDirection, wooperCurrentAnimationIndex],
-                Color.White,
-                0.0f,
-                Vector2.Zero,
-                2.0f,
-                SpriteEffects.None,
-                0.0f
+                Color.White, 0.0f, Vector2.Zero, 2.0f, SpriteEffects.None, 0.0f
             );
 
             _spriteBatch.End();
             base.Draw(gameTime);
         }
 
-        void movimientoTecladoGligar(GameTime gameTime, ref Vector2 personaje)
+        private void movimientoTecladoGligar(GameTime gameTime, ref Vector2 personaje)
         {
             KeyboardState ks = Keyboard.GetState();
             Vector2 movimiento = Vector2.Zero;
@@ -167,20 +176,25 @@ namespace Survival_Story
                 float delta = (float)gameTime.ElapsedGameTime.TotalSeconds;
                 personaje += movimiento * velocidadGlobal * delta;
 
-                if (movimiento.X < 0 && movimiento.Y < 0) direction = 6;
-                else if (movimiento.X > 0 && movimiento.Y < 0) direction = 7;
-                else if (movimiento.X < 0 && movimiento.Y > 0) direction = 4;
-                else if (movimiento.X > 0 && movimiento.Y > 0) direction = 5;
-                else if (movimiento.Y < 0) direction = 1;
-                else if (movimiento.Y > 0) direction = 0;
-                else if (movimiento.X < 0) direction = 2;
-                else if (movimiento.X > 0) direction = 3;
-            }
+                if (movimiento.X < 0 && movimiento.Y < 0) gligarDirection = 6;
+                else if (movimiento.X > 0 && movimiento.Y < 0) gligarDirection = 7;
+                else if (movimiento.X < 0 && movimiento.Y > 0) gligarDirection = 4;
+                else if (movimiento.X > 0 && movimiento.Y > 0) gligarDirection = 5;
+                else if (movimiento.Y < 0) gligarDirection = 1;
+                else if (movimiento.Y > 0) gligarDirection = 0;
+                else if (movimiento.X < 0) gligarDirection = 2;
+                else if (movimiento.X > 0) gligarDirection = 3;
 
-            animationGligar(gameTime);
+                animationGligar(gameTime);
+            }
+            else
+            {
+                gligarCurrentAnimationIndex = 1;
+                gligarTimer = 0f;
+            }
         }
 
-        void movimientoTecladoWooper(GameTime gameTime, ref Vector2 personaje)
+        private void movimientoTecladoWooper(GameTime gameTime, ref Vector2 personaje)
         {
             KeyboardState ks = Keyboard.GetState();
             Vector2 movimiento = Vector2.Zero;
@@ -204,34 +218,39 @@ namespace Survival_Story
                 else if (movimiento.Y > 0) wooperDirection = 0;
                 else if (movimiento.X < 0) wooperDirection = 2;
                 else if (movimiento.X > 0) wooperDirection = 3;
-            }
 
-            animationWooper(gameTime);
-        }
-
-        void animationGligar(GameTime gameTime)
-        {
-            if (timer > threshold)
-            {
-                if (currentAnimationIndex == 1)
-                {
-                    currentAnimationIndex = (previousAnimationIndex == 0) ? (byte)2 : (byte)0;
-                    previousAnimationIndex = currentAnimationIndex;
-                }
-                else
-                {
-                    currentAnimationIndex = 1;
-                }
-                timer = 0f;
+                animationWooper(gameTime);
             }
             else
             {
-                timer += (float)gameTime.ElapsedGameTime.TotalMilliseconds;
+                wooperCurrentAnimationIndex = 1;
+                wooperTimer = 0f;
             }
         }
 
-        void animationWooper(GameTime gameTime)
+        private void animationGligar(GameTime gameTime)
         {
+            gligarTimer += (float)gameTime.ElapsedGameTime.TotalMilliseconds;
+
+            if (gligarTimer > threshold)
+            {
+                if (gligarCurrentAnimationIndex == 1)
+                {
+                    gligarCurrentAnimationIndex = (gligarPreviousAnimationIndex == 0) ? (byte)2 : (byte)0;
+                    gligarPreviousAnimationIndex = gligarCurrentAnimationIndex;
+                }
+                else
+                {
+                    gligarCurrentAnimationIndex = 1;
+                }
+                gligarTimer -= threshold;
+            }
+        }
+
+        private void animationWooper(GameTime gameTime)
+        {
+            wooperTimer += (float)gameTime.ElapsedGameTime.TotalMilliseconds;
+
             if (wooperTimer > threshold)
             {
                 if (wooperCurrentAnimationIndex == 1)
@@ -243,11 +262,7 @@ namespace Survival_Story
                 {
                     wooperCurrentAnimationIndex = 1;
                 }
-                wooperTimer = 0f;
-            }
-            else
-            {
-                wooperTimer += (float)gameTime.ElapsedGameTime.TotalMilliseconds;
+                wooperTimer -= threshold;
             }
         }
     }
