@@ -12,6 +12,7 @@ namespace Survival_Story
         private Texture2D _player;
         private Texture2D _rock;
         private Texture2D _map;
+        private Texture2D _inventory;
 
         private Vector2 playerPosition;
         private Vector2 rockPosition;
@@ -27,6 +28,10 @@ namespace Survival_Story
         private byte previousAnimationIndex;
         private byte currentAnimationIndex;
         private int playerDirection;
+
+        private bool _openInventory = false; // Guarda si el inventario se muestra o no
+        private KeyboardState _oldKS; // Guarda el estado del teclado del frame anterior (evita parpadeo al pulsar 'I')
+
 
         public Game1()
         {
@@ -59,6 +64,7 @@ namespace Survival_Story
             _player = Content.Load<Texture2D>("assets/images/playerSheet");
             _rock = Content.Load<Texture2D>("assets/images/rock");
             _map = Content.Load<Texture2D>("assets/images/map");
+            _inventory = Content.Load<Texture2D>("assets/images/inventory");
 
             playerRectangle = new Rectangle[8, 3];
             int playerWidth = 35;
@@ -112,6 +118,8 @@ namespace Survival_Story
                     playerPosition.Y = rockHitbox.Bottom;
             }
 
+            inventory();
+
             base.Update(gameTime);
         }
 
@@ -141,8 +149,35 @@ namespace Survival_Story
                 Color.White, 0.0f, Vector2.Zero, 2.0f, SpriteEffects.None, 0.0f
             );
 
-            _spriteBatch.End();
+            if (_openInventory)
+            {
+                _spriteBatch.Draw(
+                    _inventory,
+                    new Vector2(100, 110),
+                    null,
+                    Color.White,
+                    0.0f,
+                    Vector2.Zero,
+                    7.0f,
+                    SpriteEffects.None,
+                    0.0f
+                );
+            }
+
+                _spriteBatch.End();
             base.Draw(gameTime);
+        }
+
+        private void inventory()
+        {
+            KeyboardState ks = Keyboard.GetState();
+
+            if (ks.IsKeyDown(Keys.Tab) && _oldKS.IsKeyUp(Keys.Tab))
+            {
+                _openInventory = !_openInventory; // Si estaba falso pasa a verdadero, si estaba verdadero pasa a falso
+            }
+
+            _oldKS = ks;
         }
 
         private void keyboardMovement(GameTime gameTime, ref Vector2 character)
