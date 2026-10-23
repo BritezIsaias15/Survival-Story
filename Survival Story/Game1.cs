@@ -10,11 +10,16 @@ namespace Survival_Story
         private SpriteBatch _spriteBatch;
 
         private Texture2D _player;
+        private Texture2D _rock;
+        private Texture2D _map;
 
         private Vector2 playerPosition;
+        private Vector2 rockPosition;
+        private Vector2 mapPosition;
+
         private float velocidadGlobal = 250.0f; // píxeles por segundo
 
-        private float timer;
+        private float playerTimer;
         private int threshold;
 
         private Rectangle[,] playerRectangle;
@@ -33,8 +38,10 @@ namespace Survival_Story
         protected override void Initialize()
         {
             playerPosition = new Vector2(100, 100);
+            rockPosition = new Vector2(280, 216);
+            mapPosition = new Vector2(0, 0);
 
-            timer = 0f;
+            playerTimer = 0f;
             threshold = 250;
 
             playerDirection = 0;
@@ -49,9 +56,10 @@ namespace Survival_Story
         {
             _spriteBatch = new SpriteBatch(GraphicsDevice);
 
-            _player = Content.Load<Texture2D>("assets/images/gligarSheet");
+            _player = Content.Load<Texture2D>("assets/images/playerSheet");
+            _rock = Content.Load<Texture2D>("assets/images/rock");
+            _map = Content.Load<Texture2D>("assets/images/map");
 
-            // Gligar sheet (8x3)
             playerRectangle = new Rectangle[8, 3];
             int playerWidth = 35;
             int playerHeight = 36;
@@ -69,7 +77,7 @@ namespace Survival_Story
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
 
-            Vector2 previousPosition = playerPosition;
+            Vector2 playerPreviousPosition = playerPosition;
 
             keyboardMovement(gameTime, ref playerPosition);
             
@@ -82,20 +90,28 @@ namespace Survival_Story
                 GraphicsDevice.PresentationParameters.BackBufferHeight
             );
             
+            Rectangle playerHitbox = new Rectangle((int)playerPosition.X, (int)playerPosition.Y, playerWidth, playerHeight);
+            Rectangle rockHitbox = new Rectangle((int)rockPosition.X, (int)rockPosition.Y, _rock.Width, _rock.Height);
+            
             if (playerPosition.X < windowEdge.Left) playerPosition.X = windowEdge.Left;
             else if (playerPosition.X + playerWidth > windowEdge.Right) playerPosition.X = windowEdge.Right - playerWidth;
 
             if (playerPosition.Y < windowEdge.Top) playerPosition.Y = windowEdge.Top;
             else if (playerPosition.Y + playerHeight > windowEdge.Bottom) playerPosition.Y = windowEdge.Bottom - playerHeight;
-            
-            Rectangle gligarhitbox = new Rectangle((int)playerPosition.X, (int)playerPosition.Y, playerWidth, playerHeight);
-            /*
-            if (gligarhitbox.Intersects(wooperhitbox))
+
+
+            if (playerHitbox.Intersects(rockHitbox))
             {
-                gligarPosition = previousGligarPosition;
-                wooperPosition = previousWooperPosition;
+                if (playerPreviousPosition.X + playerWidth <= rockHitbox.Left)
+                    playerPosition.X = rockHitbox.Left - playerWidth;
+                else if (playerPreviousPosition.X >= rockHitbox.Right)
+                    playerPosition.X = rockHitbox.Right;
+                if (playerPreviousPosition.Y + playerHeight <= rockHitbox.Top)
+                    playerPosition.Y = rockHitbox.Top - playerHeight;
+                else if (playerPreviousPosition.Y >= rockHitbox.Bottom)
+                    playerPosition.Y = rockHitbox.Bottom;
             }
-            */
+
             base.Update(gameTime);
         }
 
@@ -103,6 +119,20 @@ namespace Survival_Story
         {
             GraphicsDevice.Clear(Color.CornflowerBlue);
             _spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp);
+
+            
+            _spriteBatch.Draw(
+                _map,
+                mapPosition,
+                null,
+                Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.0f
+            );
+            _spriteBatch.Draw( //rock = 70x72
+                _rock,
+                rockPosition,
+                null,
+                Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.0f
+            );
 
             _spriteBatch.Draw(
                 _player,
@@ -145,15 +175,15 @@ namespace Survival_Story
             else
             {
                 currentAnimationIndex = 1;
-                timer = 0f;
+                playerTimer = 0f;
             }
         }
 
         private void animation(GameTime gameTime)
         {
-            timer += (float)gameTime.ElapsedGameTime.TotalMilliseconds;
+            playerTimer += (float)gameTime.ElapsedGameTime.TotalMilliseconds;
 
-            if (timer > threshold)
+            if (playerTimer > threshold)
             {
                 if (currentAnimationIndex == 1)
                 {
@@ -164,7 +194,7 @@ namespace Survival_Story
                 {
                     currentAnimationIndex = 1;
                 }
-                timer -= threshold;
+                playerTimer -= threshold;
             }
         }
     }
