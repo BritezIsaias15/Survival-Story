@@ -83,41 +83,7 @@ namespace Survival_Story
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
 
-            Vector2 playerPreviousPosition = playerPosition;
-
-            keyboardMovement(gameTime, ref playerPosition);
-            
-            int playerWidth = 35 * 2;
-            int playerHeight = 36 * 2;
-            
-            Rectangle windowEdge = new Rectangle(
-                0, 0,
-                GraphicsDevice.PresentationParameters.BackBufferWidth,
-                GraphicsDevice.PresentationParameters.BackBufferHeight
-            );
-            
-            Rectangle playerHitbox = new Rectangle((int)playerPosition.X, (int)playerPosition.Y, playerWidth, playerHeight);
-            Rectangle rockHitbox = new Rectangle((int)rockPosition.X, (int)rockPosition.Y, _rock.Width, _rock.Height);
-            
-            if (playerPosition.X < windowEdge.Left) playerPosition.X = windowEdge.Left;
-            else if (playerPosition.X + playerWidth > windowEdge.Right) playerPosition.X = windowEdge.Right - playerWidth;
-
-            if (playerPosition.Y < windowEdge.Top) playerPosition.Y = windowEdge.Top;
-            else if (playerPosition.Y + playerHeight > windowEdge.Bottom) playerPosition.Y = windowEdge.Bottom - playerHeight;
-
-
-            if (playerHitbox.Intersects(rockHitbox))
-            {
-                if (playerPreviousPosition.X + playerWidth <= rockHitbox.Left)
-                    playerPosition.X = rockHitbox.Left - playerWidth;
-                else if (playerPreviousPosition.X >= rockHitbox.Right)
-                    playerPosition.X = rockHitbox.Right;
-                if (playerPreviousPosition.Y + playerHeight <= rockHitbox.Top)
-                    playerPosition.Y = rockHitbox.Top - playerHeight;
-                else if (playerPreviousPosition.Y >= rockHitbox.Bottom)
-                    playerPosition.Y = rockHitbox.Bottom;
-            }
-
+            collision(gameTime);
             inventory();
 
             base.Update(gameTime);
@@ -166,6 +132,66 @@ namespace Survival_Story
 
                 _spriteBatch.End();
             base.Draw(gameTime);
+        }
+
+        private void collision(GameTime gameTime)
+        {
+            float delta = (float)gameTime.ElapsedGameTime.TotalSeconds;
+
+            KeyboardState ks = Keyboard.GetState();
+            Vector2 movement = Vector2.Zero;
+            if (ks.IsKeyDown(Keys.W)) movement.Y -= 1;
+            if (ks.IsKeyDown(Keys.S)) movement.Y += 1;
+            if (ks.IsKeyDown(Keys.A)) movement.X -= 1;
+            if (ks.IsKeyDown(Keys.D)) movement.X += 1;
+
+            if (movement != Vector2.Zero)
+            {
+                movement.Normalize();
+                if (movement.X < 0 && movement.Y < 0) playerDirection = 6;
+                else if (movement.X > 0 && movement.Y < 0) playerDirection = 7;
+                else if (movement.X < 0 && movement.Y > 0) playerDirection = 4;
+                else if (movement.X > 0 && movement.Y > 0) playerDirection = 5;
+                else if (movement.Y < 0) playerDirection = 1;
+                else if (movement.Y > 0) playerDirection = 0;
+                else if (movement.X < 0) playerDirection = 2;
+                else if (movement.X > 0) playerDirection = 3;
+                animation(gameTime);
+            }
+            else
+            {
+                currentAnimationIndex = 1;
+                playerTimer = 0f;
+            }
+
+            int playerWidth = 35 * 2;
+            int playerHeight = 36 * 2;
+            Rectangle windowEdge = new Rectangle(0, 0, GraphicsDevice.PresentationParameters.BackBufferWidth, GraphicsDevice.PresentationParameters.BackBufferHeight);
+            Rectangle rockHitbox = new Rectangle((int)rockPosition.X, (int)rockPosition.Y, _rock.Width, _rock.Height);
+
+            playerPosition.X += movement.X * velocidadGlobal * delta;
+
+            if (playerPosition.X < windowEdge.Left) playerPosition.X = windowEdge.Left;
+            else if (playerPosition.X + playerWidth > windowEdge.Right) playerPosition.X = windowEdge.Right - playerWidth;
+
+            Rectangle playerHitboxX = new Rectangle((int)playerPosition.X, (int)playerPosition.Y, playerWidth, playerHeight);
+            if (playerHitboxX.Intersects(rockHitbox))
+            {
+                if (movement.X > 0) playerPosition.X = rockHitbox.Left - playerWidth;
+                else if (movement.X < 0) playerPosition.X = rockHitbox.Right;
+            }
+
+            playerPosition.Y += movement.Y * velocidadGlobal * delta;
+
+            if (playerPosition.Y < windowEdge.Top) playerPosition.Y = windowEdge.Top;
+            else if (playerPosition.Y + playerHeight > windowEdge.Bottom) playerPosition.Y = windowEdge.Bottom - playerHeight;
+
+            Rectangle playerHitboxY = new Rectangle((int)playerPosition.X, (int)playerPosition.Y, playerWidth, playerHeight);
+            if (playerHitboxY.Intersects(rockHitbox))
+            {
+                if (movement.Y > 0) playerPosition.Y = rockHitbox.Top - playerHeight;
+                else if (movement.Y < 0) playerPosition.Y = rockHitbox.Bottom;
+            }
         }
 
         private void inventory()
