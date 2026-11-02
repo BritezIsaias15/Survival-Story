@@ -11,16 +11,26 @@ namespace Survival_Story
 
         private Texture2D _player;
         private Texture2D _rock;
+        private Texture2D _tree;
+        private Texture2D _sand;
         private Texture2D _map;
-        private Texture2D _picaxe;
+        private Texture2D _woodPicaxe;
+        private Texture2D _woodAxe;
+        private Texture2D _woodShovel;
         private Texture2D _inventory;
 
         private Vector2 playerPosition;
         private Vector2[] rockPosition;
-        private Vector2 picaxePosition;
+        private Vector2[] treePosition;
+        private Vector2[] sandPosition;
+        private Vector2 toolPosition;
         private Vector2 mapPosition;
 
         private bool[] rockActive;
+        private bool[] treeActive;
+        private bool[] sandActive;
+        private bool axeEquipped;
+        private bool shovelEquipped;
         private bool picaxeEquipped; 
 
         private float velocidadGlobal = 250.0f; // píxeles por segundo
@@ -57,12 +67,30 @@ namespace Survival_Story
             rockActive[0] = true;
             rockActive[1] = true;
 
-            playerTimer = 0f;
-            threshold = 250;
+            treePosition = new Vector2[2];
+            treePosition[0] = new Vector2(351, 216);
+            treePosition[1] = new Vector2(71, 216);
+
+            treeActive = new bool[2];
+            treeActive[0] = true;
+            treeActive[1] = true;
+
+            sandPosition = new Vector2[2];
+            sandPosition[0] = new Vector2(490, 216);
+            sandPosition[1] = new Vector2(210, 350);
+
+            sandActive = new bool[2];
+            sandActive[0] = true;
+            sandActive[1] = true;
+
+            picaxeEquipped = true;
+            axeEquipped = false;
+            shovelEquipped = false;
 
             mapPosition = new Vector2(0, 0);
+            playerTimer = 0f;
+            threshold = 250;
             playerDirection = 0;
-
             previousAnimationIndex = 2;
             currentAnimationIndex = 1;
 
@@ -75,9 +103,13 @@ namespace Survival_Story
 
             _player = Content.Load<Texture2D>("assets/images/playerSheet");
             _rock = Content.Load<Texture2D>("assets/images/rock");
+            _sand = Content.Load<Texture2D>("assets/images/sand");
+            _tree = Content.Load<Texture2D>("assets/images/tree");
             _map = Content.Load<Texture2D>("assets/images/map");
             _inventory = Content.Load<Texture2D>("assets/images/inventory");
-            _picaxe = Content.Load<Texture2D>("assets/images/picaxe");
+            _woodPicaxe = Content.Load<Texture2D>("assets/images/woodPicaxe");
+            _woodAxe = Content.Load<Texture2D>("assets/images/woodAxe");
+            _woodShovel = Content.Load<Texture2D>("assets/images/woodShovel"); 
 
             playerRectangle = new Rectangle[8, 3];
             int playerWidth = 35;
@@ -98,9 +130,9 @@ namespace Survival_Story
 
             collision(gameTime);
             inventory();
-            interactWithRocks();
-            picoPosition.X = playerPosition.X + 50;
-            picoPosition.Y = playerPosition.Y + 30;
+            interact();
+            toolPosition.X = playerPosition.X + 50;
+            toolPosition.Y = playerPosition.Y + 30;
 
             _oldKS = Keyboard.GetState();
 
@@ -130,6 +162,26 @@ namespace Survival_Story
                 }
             }
 
+            for (int i = 0; i < treePosition.Length; i++)
+            {
+                if (treeActive[i])
+                {
+                    _spriteBatch.Draw(
+                        _tree, treePosition[i], null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.0f
+                    );
+                }
+            }
+
+            for (int i = 0; i < sandPosition.Length; i++)
+            {
+                if (sandActive[i])
+                {
+                    _spriteBatch.Draw(
+                        _sand, sandPosition[i], null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.0f
+                    );
+                }
+            }
+
             _spriteBatch.Draw(
                 _player,
                 playerPosition,
@@ -139,7 +191,17 @@ namespace Survival_Story
 
             if (picaxeEquipped == true)
             {
-                _spriteBatch.Draw(_pico, picoPositions, null, Color.White, 0.0f, Vector2.Zero, 0.5f, SpriteEffects.None, 0.0f);
+                _spriteBatch.Draw(_woodPicaxe, toolPosition, null, Color.White, 0.0f, Vector2.Zero, 0.5f, SpriteEffects.None, 0.0f);
+            }
+            
+            if (axeEquipped == true)
+            {
+                _spriteBatch.Draw(_woodPicaxe, toolPosition, null, Color.White, 0.0f, Vector2.Zero, 0.5f, SpriteEffects.None, 0.0f);
+            }
+
+            if (shovelEquipped == true)
+            {
+                _spriteBatch.Draw(_woodShovel, toolPosition, null, Color.White, 0.0f, Vector2.Zero, 0.5f, SpriteEffects.None, 0.0f);
             }
 
             if (_openInventory)
@@ -201,11 +263,11 @@ namespace Survival_Story
 
             Rectangle playerHitboxX = new Rectangle((int)playerPosition.X, (int)playerPosition.Y, playerWidth, playerHeight);
 
-            for (int i = 0; i < rockPositions.Length; i++)
+            for (int i = 0; i < rockPosition.Length; i++)
             {
                 if (!rockActive[i]) continue;
 
-                Rectangle rockHitbox = new Rectangle((int)rockPositions[i].X, (int)rockPositions[i].Y, _rock.Width, _rock.Height);
+                Rectangle rockHitbox = new Rectangle((int)rockPosition[i].X, (int)rockPosition[i].Y, _rock.Width, _rock.Height);
                 if (playerHitboxX.Intersects(rockHitbox))
                 {
                     if (movement.X > 0) playerPosition.X = rockHitbox.Left - playerWidth;
@@ -213,56 +275,87 @@ namespace Survival_Story
                 }
             }
 
+            for (int i = 0; i < treePosition.Length; i++)
+            {
+                if (!treeActive[i]) continue;
+
+                Rectangle treeHitbox = new Rectangle((int)treePosition[i].X, (int)treePosition[i].Y, _tree.Width, _tree.Height);
+                if (playerHitboxX.Intersects(treeHitbox))
+                {
+                    if (movement.X > 0) playerPosition.X = treeHitbox.Left - playerWidth;
+                    else if (movement.X < 0) playerPosition.X = treeHitbox.Right;
+                }
+            }
+            for (int i = 0; i < sandPosition.Length; i++)
+            {
+                if (!sandActive[i]) continue;
+                Rectangle sandHitbox = new Rectangle((int)sandPosition[i].X, (int)sandPosition[i].Y, _sand.Width, _sand.Height);
+                if (playerHitboxX.Intersects(sandHitbox))
+                {
+                    if (movement.X > 0) playerPosition.X = sandHitbox.Left - playerWidth;
+                    else if (movement.X < 0) playerPosition.X = sandHitbox.Right;
+                }
+            }
             playerPosition.Y += movement.Y * velocidadGlobal * delta;
             if (playerPosition.Y < windowEdge.Top) playerPosition.Y = windowEdge.Top;
             else if (playerPosition.Y + playerHeight > windowEdge.Bottom) playerPosition.Y = windowEdge.Bottom - playerHeight;
-
             Rectangle playerHitboxY = new Rectangle((int)playerPosition.X, (int)playerPosition.Y, playerWidth, playerHeight);
 
-            for (int i = 0; i < rockPositions.Length; i++)
+            for (int i = 0; i < rockPosition.Length; i++)
             {
                 if (!rockActive[i]) continue;
-
-                Rectangle rockHitbox = new Rectangle((int)rockPositions[i].X, (int)rockPositions[i].Y, _rock.Width, _rock.Height);
+                Rectangle rockHitbox = new Rectangle((int)rockPosition[i].X, (int)rockPosition[i].Y, _rock.Width, _rock.Height);
                 if (playerHitboxY.Intersects(rockHitbox))
                 {
                     if (movement.Y > 0) playerPosition.Y = rockHitbox.Top - playerHeight;
                     else if (movement.Y < 0) playerPosition.Y = rockHitbox.Bottom;
                 }
             }
+            for (int i = 0; i < treePosition.Length; i++)
+            {
+                if (!treeActive[i]) continue;
+                Rectangle treeHitbox = new Rectangle((int)treePosition[i].X, (int)treePosition[i].Y, _tree.Width, _tree.Height);
+                if (playerHitboxY.Intersects(treeHitbox))
+                {
+                    if (movement.Y > 0) playerPosition.Y = treeHitbox.Top - playerHeight;
+                    else if (movement.Y < 0) playerPosition.Y = treeHitbox.Bottom;
+                }
+            }
+            for (int i = 0; i < sandPosition.Length; i++)
+            {
+                if (!sandActive[i]) continue;
+                Rectangle sandHitbox = new Rectangle((int)sandPosition[i].X, (int)sandPosition[i].Y, _sand.Width, _sand.Height);
+                if (playerHitboxY.Intersects(sandHitbox))
+                {
+                    if (movement.Y > 0) playerPosition.Y = sandHitbox.Top - playerHeight;
+                    else if (movement.Y < 0) playerPosition.Y = sandHitbox.Bottom;
+                }
+            }
         }
-
         private void inventory()
         {
             KeyboardState ks = Keyboard.GetState();
-
             if (ks.IsKeyDown(Keys.Tab) && _oldKS.IsKeyUp(Keys.Tab))
             {
-                _openInventory = !_openInventory; // Si estaba falso pasa a verdadero, si estaba verdadero pasa a falso
+                _openInventory = !_openInventory;
             }
-
-            _oldKS = ks;
         }
-
-        private void interactWithRocks()
+        private void interact()
         {
+            Vector2 playerCenter = new Vector2(playerPosition.X + 35, playerPosition.Y + 36);
             KeyboardState ks = Keyboard.GetState();
-
-            if (ks.IsKeyDown(Keys.P)) picoequip = true;
-            if (ks.IsKeyDown(Keys.O)) picoequip = false;
-
-            if (ks.IsKeyDown(Keys.E) && picoequip == true)
+            if (ks.IsKeyDown(Keys.R) && _oldKS.IsKeyUp(Keys.R)) { picaxeEquipped = true; axeEquipped = false; shovelEquipped = false; }
+            if (ks.IsKeyDown(Keys.T) && _oldKS.IsKeyUp(Keys.T)) { picaxeEquipped = false; axeEquipped = true; shovelEquipped = false; }
+            if (ks.IsKeyDown(Keys.Y) && _oldKS.IsKeyUp(Keys.Y)) { picaxeEquipped = false; axeEquipped = false; shovelEquipped = true; }
+            if (ks.IsKeyDown(Keys.U) && _oldKS.IsKeyUp(Keys.U)) { picaxeEquipped = false; axeEquipped = false; shovelEquipped = false; }
+            if (ks.IsKeyDown(Keys.E) && picaxeEquipped == true)
             {
-                Vector2 playerCenter = new Vector2(playerPosition.X + 35, playerPosition.Y + 36);
-
-                for (int i = 0; i < rockPositions.Length; i++)
+                for (int i = 0; i < rockPosition.Length; i++)
                 {
                     if (rockActive[i])
                     {
-                        Vector2 rockCenter = new Vector2(rockPositions[i].X + (_rock.Width / 2), rockPositions[i].Y + (_rock.Height / 2));
-
+                        Vector2 rockCenter = new Vector2(rockPosition[i].X + (_rock.Width / 2), rockPosition[i].Y + (_rock.Height / 2));
                         float distance = Vector2.Distance(playerCenter, rockCenter);
-
                         if (distance < 80.0f)
                         {
                             rockActive[i] = false;
@@ -271,46 +364,42 @@ namespace Survival_Story
                     }
                 }
             }
-        }
-
-        private void keyboardMovement(GameTime gameTime, ref Vector2 character)
-        {
-            KeyboardState ks = Keyboard.GetState();
-            Vector2 movement = Vector2.Zero;
-
-            if (ks.IsKeyDown(Keys.W)) movement.Y -= 1;
-            if (ks.IsKeyDown(Keys.S)) movement.Y += 1;
-            if (ks.IsKeyDown(Keys.A)) movement.X -= 1;
-            if (ks.IsKeyDown(Keys.D)) movement.X += 1;
-
-            if (movement != Vector2.Zero)
+            if (ks.IsKeyDown(Keys.E) && axeEquipped == true)
             {
-                movement.Normalize();
-                float delta = (float)gameTime.ElapsedGameTime.TotalSeconds;
-                character += movement * velocidadGlobal * delta;
-
-                if (movement.X < 0 && movement.Y < 0) playerDirection = 6;
-                else if (movement.X > 0 && movement.Y < 0) playerDirection = 7;
-                else if (movement.X < 0 && movement.Y > 0) playerDirection = 4;
-                else if (movement.X > 0 && movement.Y > 0) playerDirection = 5;
-                else if (movement.Y < 0) playerDirection = 1;
-                else if (movement.Y > 0) playerDirection = 0;
-                else if (movement.X < 0) playerDirection = 2;
-                else if (movement.X > 0) playerDirection = 3;
-
-                animation(gameTime);
+                for (int i = 0; i < treePosition.Length; i++)
+                {
+                    if (treeActive[i])
+                    {
+                        Vector2 treeCenter = new Vector2(treePosition[i].X + (_tree.Width / 2), treePosition[i].Y + (_tree.Height / 2));
+                        float distance = Vector2.Distance(playerCenter, treeCenter);
+                        if (distance < 90.0f)
+                        {
+                            treeActive[i] = false;
+                            break;
+                        }
+                    }
+                }
             }
-            else
+            if (ks.IsKeyDown(Keys.E) && shovelEquipped == true)
             {
-                currentAnimationIndex = 1;
-                playerTimer = 0f;
+                for (int i = 0; i < sandPosition.Length; i++)
+                {
+                    if (sandActive[i])
+                    {
+                        Vector2 sandCenter = new Vector2(sandPosition[i].X + (_sand.Width / 2), sandPosition[i].Y + (_sand.Height / 2));
+                        float distance = Vector2.Distance(playerCenter, sandCenter);
+                        if (distance < 80.0f)
+                        {
+                            sandActive[i] = false;
+                            break;
+                        }
+                    }
+                }
             }
         }
-
         private void animation(GameTime gameTime)
         {
             playerTimer += (float)gameTime.ElapsedGameTime.TotalMilliseconds;
-
             if (playerTimer > threshold)
             {
                 if (currentAnimationIndex == 1)
