@@ -12,11 +12,16 @@ namespace Survival_Story
         private Texture2D _player;
         private Texture2D _rock;
         private Texture2D _map;
+        private Texture2D _picaxe;
         private Texture2D _inventory;
 
         private Vector2 playerPosition;
-        private Vector2 rockPosition;
+        private Vector2[] rockPosition;
+        private Vector2 picaxePosition;
         private Vector2 mapPosition;
+
+        private bool[] rockActive;
+        private bool picaxeEquipped; 
 
         private float velocidadGlobal = 250.0f; // píxeles por segundo
 
@@ -43,12 +48,19 @@ namespace Survival_Story
         protected override void Initialize()
         {
             playerPosition = new Vector2(100, 100);
-            rockPosition = new Vector2(280, 216);
-            mapPosition = new Vector2(0, 0);
+
+            rockPosition = new Vector2[2];
+            rockPosition[0] = new Vector2(280, 216);
+            rockPosition[1] = new Vector2(560, 0);
+
+            rockActive = new bool[2];
+            rockActive[0] = true;
+            rockActive[1] = true;
 
             playerTimer = 0f;
             threshold = 250;
 
+            mapPosition = new Vector2(0, 0);
             playerDirection = 0;
 
             previousAnimationIndex = 2;
@@ -65,6 +77,7 @@ namespace Survival_Story
             _rock = Content.Load<Texture2D>("assets/images/rock");
             _map = Content.Load<Texture2D>("assets/images/map");
             _inventory = Content.Load<Texture2D>("assets/images/inventory");
+            _picaxe = Content.Load<Texture2D>("assets/images/picaxe");
 
             playerRectangle = new Rectangle[8, 3];
             int playerWidth = 35;
@@ -85,6 +98,11 @@ namespace Survival_Story
 
             collision(gameTime);
             inventory();
+            interactWithRocks();
+            picoPosition.X = playerPosition.X + 50;
+            picoPosition.Y = playerPosition.Y + 30;
+
+            _oldKS = Keyboard.GetState();
 
             base.Update(gameTime);
         }
@@ -101,12 +119,16 @@ namespace Survival_Story
                 null,
                 Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.0f
             );
-            _spriteBatch.Draw( //rock = 70x72
-                _rock,
-                rockPosition,
-                null,
-                Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.0f
-            );
+
+            for (int i = 0; i < rockPosition.Length; i++)
+            {
+                if (rockActive[i])
+                {
+                    _spriteBatch.Draw(
+                        _rock, rockPosition[i], null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.0f
+                    );
+                }
+            }
 
             _spriteBatch.Draw(
                 _player,
@@ -114,6 +136,11 @@ namespace Survival_Story
                 playerRectangle[playerDirection, currentAnimationIndex],
                 Color.White, 0.0f, Vector2.Zero, 2.0f, SpriteEffects.None, 0.0f
             );
+
+            if (picaxeEquipped == true)
+            {
+                _spriteBatch.Draw(_pico, picoPositions, null, Color.White, 0.0f, Vector2.Zero, 0.5f, SpriteEffects.None, 0.0f);
+            }
 
             if (_openInventory)
             {
@@ -137,9 +164,9 @@ namespace Survival_Story
         private void collision(GameTime gameTime)
         {
             float delta = (float)gameTime.ElapsedGameTime.TotalSeconds;
-
             KeyboardState ks = Keyboard.GetState();
             Vector2 movement = Vector2.Zero;
+
             if (ks.IsKeyDown(Keys.W)) movement.Y -= 1;
             if (ks.IsKeyDown(Keys.S)) movement.Y += 1;
             if (ks.IsKeyDown(Keys.A)) movement.X -= 1;
@@ -167,30 +194,41 @@ namespace Survival_Story
             int playerWidth = 35 * 2;
             int playerHeight = 36 * 2;
             Rectangle windowEdge = new Rectangle(0, 0, GraphicsDevice.PresentationParameters.BackBufferWidth, GraphicsDevice.PresentationParameters.BackBufferHeight);
-            Rectangle rockHitbox = new Rectangle((int)rockPosition.X, (int)rockPosition.Y, _rock.Width, _rock.Height);
 
             playerPosition.X += movement.X * velocidadGlobal * delta;
-
             if (playerPosition.X < windowEdge.Left) playerPosition.X = windowEdge.Left;
             else if (playerPosition.X + playerWidth > windowEdge.Right) playerPosition.X = windowEdge.Right - playerWidth;
 
             Rectangle playerHitboxX = new Rectangle((int)playerPosition.X, (int)playerPosition.Y, playerWidth, playerHeight);
-            if (playerHitboxX.Intersects(rockHitbox))
+
+            for (int i = 0; i < rockPositions.Length; i++)
             {
-                if (movement.X > 0) playerPosition.X = rockHitbox.Left - playerWidth;
-                else if (movement.X < 0) playerPosition.X = rockHitbox.Right;
+                if (!rockActive[i]) continue;
+
+                Rectangle rockHitbox = new Rectangle((int)rockPositions[i].X, (int)rockPositions[i].Y, _rock.Width, _rock.Height);
+                if (playerHitboxX.Intersects(rockHitbox))
+                {
+                    if (movement.X > 0) playerPosition.X = rockHitbox.Left - playerWidth;
+                    else if (movement.X < 0) playerPosition.X = rockHitbox.Right;
+                }
             }
 
             playerPosition.Y += movement.Y * velocidadGlobal * delta;
-
             if (playerPosition.Y < windowEdge.Top) playerPosition.Y = windowEdge.Top;
             else if (playerPosition.Y + playerHeight > windowEdge.Bottom) playerPosition.Y = windowEdge.Bottom - playerHeight;
 
             Rectangle playerHitboxY = new Rectangle((int)playerPosition.X, (int)playerPosition.Y, playerWidth, playerHeight);
-            if (playerHitboxY.Intersects(rockHitbox))
+
+            for (int i = 0; i < rockPositions.Length; i++)
             {
-                if (movement.Y > 0) playerPosition.Y = rockHitbox.Top - playerHeight;
-                else if (movement.Y < 0) playerPosition.Y = rockHitbox.Bottom;
+                if (!rockActive[i]) continue;
+
+                Rectangle rockHitbox = new Rectangle((int)rockPositions[i].X, (int)rockPositions[i].Y, _rock.Width, _rock.Height);
+                if (playerHitboxY.Intersects(rockHitbox))
+                {
+                    if (movement.Y > 0) playerPosition.Y = rockHitbox.Top - playerHeight;
+                    else if (movement.Y < 0) playerPosition.Y = rockHitbox.Bottom;
+                }
             }
         }
 
@@ -204,6 +242,35 @@ namespace Survival_Story
             }
 
             _oldKS = ks;
+        }
+
+        private void interactWithRocks()
+        {
+            KeyboardState ks = Keyboard.GetState();
+
+            if (ks.IsKeyDown(Keys.P)) picoequip = true;
+            if (ks.IsKeyDown(Keys.O)) picoequip = false;
+
+            if (ks.IsKeyDown(Keys.E) && picoequip == true)
+            {
+                Vector2 playerCenter = new Vector2(playerPosition.X + 35, playerPosition.Y + 36);
+
+                for (int i = 0; i < rockPositions.Length; i++)
+                {
+                    if (rockActive[i])
+                    {
+                        Vector2 rockCenter = new Vector2(rockPositions[i].X + (_rock.Width / 2), rockPositions[i].Y + (_rock.Height / 2));
+
+                        float distance = Vector2.Distance(playerCenter, rockCenter);
+
+                        if (distance < 80.0f)
+                        {
+                            rockActive[i] = false;
+                            break;
+                        }
+                    }
+                }
+            }
         }
 
         private void keyboardMovement(GameTime gameTime, ref Vector2 character)
