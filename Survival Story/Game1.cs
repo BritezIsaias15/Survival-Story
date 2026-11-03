@@ -33,7 +33,7 @@ namespace Survival_Story
         private bool shovelEquipped;
         private bool picaxeEquipped; 
 
-        private float velocidadGlobal = 250.0f; // píxeles por segundo
+        private float velocidadGlobal = 250.0f;
 
         private float playerTimer;
         private int threshold;
@@ -44,8 +44,8 @@ namespace Survival_Story
         private byte currentAnimationIndex;
         private int playerDirection;
 
-        private bool _openInventory = false; // Guarda si el inventario se muestra o no
-        private KeyboardState _oldKS; // Guarda el estado del teclado del frame anterior (evita parpadeo al pulsar 'I')
+        private bool _openInventory = false;
+        private KeyboardState _oldKS;
 
 
         public Game1()
@@ -58,30 +58,39 @@ namespace Survival_Story
         protected override void Initialize()
         {
             playerPosition = new Vector2(100, 100);
+            // poner grPosX * posHorizontal y grPosY * posVertical (0-inf??)
+            int grPosX = 71;
+            int grPosY = 73;
 
-            rockPosition = new Vector2[2];
-            rockPosition[0] = new Vector2(280, 216);
-            rockPosition[1] = new Vector2(560, 0);
+            rockPosition = new Vector2[3];
+            rockPosition[0] = new Vector2(grPosX, grPosY);
+            rockPosition[1] = new Vector2(grPosX * 3, grPosY * 3);
+            rockPosition[2] = new Vector2(grPosX * 5, grPosY * 5);;
 
-            rockActive = new bool[2];
+            rockActive = new bool[3];
             rockActive[0] = true;
             rockActive[1] = true;
+            rockActive[2] = true;
 
-            treePosition = new Vector2[2];
-            treePosition[0] = new Vector2(351, 216);
-            treePosition[1] = new Vector2(71, 216);
+            treePosition = new Vector2[3];
+            treePosition[0] = new Vector2(grPosX, grPosY * 3);
+            treePosition[1] = new Vector2(grPosX * 3, grPosY * 5);
+            treePosition[2] = new Vector2(grPosX * 5, grPosY);
 
-            treeActive = new bool[2];
+            treeActive = new bool[3];
             treeActive[0] = true;
             treeActive[1] = true;
+            treeActive[2] = true;
 
-            sandPosition = new Vector2[2];
-            sandPosition[0] = new Vector2(490, 216);
-            sandPosition[1] = new Vector2(210, 350);
+            sandPosition = new Vector2[3];
+            sandPosition[0] = new Vector2(grPosX, grPosY * 5);
+            sandPosition[1] = new Vector2(grPosX * 3, grPosY);
+            sandPosition[2] = new Vector2(grPosX * 5, grPosY * 3);
 
-            sandActive = new bool[2];
+            sandActive = new bool[3];
             sandActive[0] = true;
             sandActive[1] = true;
+            sandActive[2] = true;
 
             picaxeEquipped = true;
             axeEquipped = false;
