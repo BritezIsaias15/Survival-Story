@@ -5,26 +5,48 @@ using System.Text;
 using System.Threading.Tasks;
 using MySqlConnector;
 
-namespace Survival_Story
+namespace Entradas
 {
-    internal class ConnectDB {
+    internal class ConexionBD
+    {
+        private string stringConexion = "Server=localhost;Port=3306;Database=supervivencia;User=root;Pwd=;";
 
-        public void guardarProgreso(string nombrejugador, int nivel)
+        // NUEVO MÉTODO: Registra al jugador antes de guardar la partida
+        public void RegistrarJugador(int jugadorId, string nombreJugador, string nombreUsuarioJugador, string emailJugador, string telefonoJugador)
         {
-            string conexion = "Server=localHost;Port=3306;Database=base_datos;Pwd=;";
-            string query = "INSERT INTO progreso (nombreJugador, nivel) VALUES (@nombreJugador, @nivel)";
+            // Ajusta los nombres de las columnas ('jugador_id', 'nombre') según tu tabla real
+            string query = "INSERT INTO jugadores (nombre, nombre_usuario, email, teléfono)" + 
+                           "VALUES (@nombre, @nombre_usuario, @email, @teléfono)";
 
             try
             {
-                using (MySqlConnection newConexion = new MySqlConnection(conexion)
+                using (MySqlConnection conexion = new MySqlConnection(stringConexion))
                 {
-                    using (MySqlCommand = n)
+                    conexion.Open();
+                    using (MySqlCommand comando = new MySqlCommand(query, conexion))
+                    {
+                        comando.Parameters.AddWithValue("@nombre", nombreJugador);
+                        comando.Parameters.AddWithValue("@nombre_usuario", nombreUsuarioJugador);
+                        comando.Parameters.AddWithValue("@email", emailJugador);
+                        comando.Parameters.AddWithValue("@teléfono", telefonoJugador);
+
+                        comando.ExecuteNonQuery();
+                        System.Diagnostics.Debug.WriteLine($"Jugador '{nombreJugador}' registrado con éxito.");
+                    }
                 }
             }
             catch (MySqlException ex)
             {
-                Debug.WriteLine("MySql Error", ex.Message);
-            } 
+                // Si el ID ya existe, MySQL dará error de llave primaria duplicada (código 1062)
+                if (ex.Number == 1062)
+                {
+                    System.Diagnostics.Debug.WriteLine($"El jugador con ID {jugadorId} ya estaba registrado. Continuamos...");
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine("Error al registrar jugador: " + ex.Message);
+                }
+            }
         }
     }
 }

@@ -54,16 +54,7 @@ namespace Survival_Story
             Content.RootDirectory = "Content";
             IsMouseVisible = true;
         }
-
-        int[] tools(int picaxe, int axe, int shovel)
-        {
-            KeyboardState ks = Keyboard.GetState();
-            if (ks.IsKeyDown(Keys.R) && _oldKS.IsKeyUp(Keys.R)) { picaxeEquipped = true; axeEquipped = false; shovelEquipped = false; }
-            if (ks.IsKeyDown(Keys.T) && _oldKS.IsKeyUp(Keys.T)) { picaxeEquipped = false; axeEquipped = true; shovelEquipped = false; }
-            if (ks.IsKeyDown(Keys.Y) && _oldKS.IsKeyUp(Keys.Y)) { picaxeEquipped = false; axeEquipped = false; shovelEquipped = true; }
-            if (ks.IsKeyDown(Keys.U) && _oldKS.IsKeyUp(Keys.U)) { picaxeEquipped = false; axeEquipped = false; shovelEquipped = false; }
-        }
-        static Vector2 pos(int posX, int posY)
+        private Vector2 pos(int posX, int posY)
         {
             int grPosX = 71;
             int grPosY = 73;
@@ -349,13 +340,11 @@ namespace Survival_Story
         {
             Vector2 playerCenter = new Vector2(playerPosition.X + 35, playerPosition.Y + 36);
             KeyboardState ks = Keyboard.GetState();
-            if(ks.IsKeyDown(Keys.R)) {
-                for(int )
-            }
             if (ks.IsKeyDown(Keys.R) && _oldKS.IsKeyUp(Keys.R)) { picaxeEquipped = true; axeEquipped = false; shovelEquipped = false; }
             if (ks.IsKeyDown(Keys.T) && _oldKS.IsKeyUp(Keys.T)) { picaxeEquipped = false; axeEquipped = true; shovelEquipped = false; }
             if (ks.IsKeyDown(Keys.Y) && _oldKS.IsKeyUp(Keys.Y)) { picaxeEquipped = false; axeEquipped = false; shovelEquipped = true; }
             if (ks.IsKeyDown(Keys.U) && _oldKS.IsKeyUp(Keys.U)) { picaxeEquipped = false; axeEquipped = false; shovelEquipped = false; }
+            
             if (ks.IsKeyDown(Keys.E) && picaxeEquipped == true)
             {
                 for (int i = 0; i < rockPosition.Length; i++)
