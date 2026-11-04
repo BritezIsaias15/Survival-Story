@@ -55,17 +55,30 @@ namespace Survival_Story
             IsMouseVisible = true;
         }
 
+        int[] tools(int picaxe, int axe, int shovel)
+        {
+            KeyboardState ks = Keyboard.GetState();
+            if (ks.IsKeyDown(Keys.R) && _oldKS.IsKeyUp(Keys.R)) { picaxeEquipped = true; axeEquipped = false; shovelEquipped = false; }
+            if (ks.IsKeyDown(Keys.T) && _oldKS.IsKeyUp(Keys.T)) { picaxeEquipped = false; axeEquipped = true; shovelEquipped = false; }
+            if (ks.IsKeyDown(Keys.Y) && _oldKS.IsKeyUp(Keys.Y)) { picaxeEquipped = false; axeEquipped = false; shovelEquipped = true; }
+            if (ks.IsKeyDown(Keys.U) && _oldKS.IsKeyUp(Keys.U)) { picaxeEquipped = false; axeEquipped = false; shovelEquipped = false; }
+        }
+        static Vector2 pos(int posX, int posY)
+        {
+            int grPosX = 71;
+            int grPosY = 73;
+            return new Vector2(grPosX * posX, grPosY * posY);
+        }
+
         protected override void Initialize()
         {
             playerPosition = new Vector2(100, 100);
             // poner grPosX * posHorizontal y grPosY * posVertical (0-inf??)
-            int grPosX = 71;
-            int grPosY = 73;
 
             rockPosition = new Vector2[3];
-            rockPosition[0] = new Vector2(grPosX, grPosY);
-            rockPosition[1] = new Vector2(grPosX * 3, grPosY * 3);
-            rockPosition[2] = new Vector2(grPosX * 5, grPosY * 5);;
+            rockPosition[0] = pos(1,1);
+            rockPosition[1] = pos(3,3);
+            rockPosition[2] = pos(5,5);
 
             rockActive = new bool[3];
             rockActive[0] = true;
@@ -73,9 +86,9 @@ namespace Survival_Story
             rockActive[2] = true;
 
             treePosition = new Vector2[3];
-            treePosition[0] = new Vector2(grPosX, grPosY * 3);
-            treePosition[1] = new Vector2(grPosX * 3, grPosY * 5);
-            treePosition[2] = new Vector2(grPosX * 5, grPosY);
+            treePosition[0] = pos(1,3);
+            treePosition[1] = pos(3,5);
+            treePosition[2] = pos(5,1);
 
             treeActive = new bool[3];
             treeActive[0] = true;
@@ -83,9 +96,9 @@ namespace Survival_Story
             treeActive[2] = true;
 
             sandPosition = new Vector2[3];
-            sandPosition[0] = new Vector2(grPosX, grPosY * 5);
-            sandPosition[1] = new Vector2(grPosX * 3, grPosY);
-            sandPosition[2] = new Vector2(grPosX * 5, grPosY * 3);
+            sandPosition[0] = pos(1,5);
+            sandPosition[1] = pos(3,1);
+            sandPosition[2] = pos(5,3);
 
             sandActive = new bool[3];
             sandActive[0] = true;
@@ -192,42 +205,27 @@ namespace Survival_Story
             }
 
             _spriteBatch.Draw(
-                _player,
-                playerPosition,
-                playerRectangle[playerDirection, currentAnimationIndex],
-                Color.White, 0.0f, Vector2.Zero, 2.0f, SpriteEffects.None, 0.0f
+                _player, playerPosition, playerRectangle[playerDirection, currentAnimationIndex], Color.White, 0.0f, Vector2.Zero, 2.0f, SpriteEffects.None, 0.0f
             );
 
             if (picaxeEquipped == true)
             {
                 _spriteBatch.Draw(_woodPicaxe, toolPosition, null, Color.White, 0.0f, Vector2.Zero, 0.5f, SpriteEffects.None, 0.0f);
             }
-            
-            if (axeEquipped == true)
+            else if (axeEquipped == true)
             {
-                _spriteBatch.Draw(_woodPicaxe, toolPosition, null, Color.White, 0.0f, Vector2.Zero, 0.5f, SpriteEffects.None, 0.0f);
+                _spriteBatch.Draw(_woodAxe, toolPosition, null, Color.White, 0.0f, Vector2.Zero, 0.5f, SpriteEffects.None, 0.0f);
             }
-
-            if (shovelEquipped == true)
+            else if (shovelEquipped == true)
             {
                 _spriteBatch.Draw(_woodShovel, toolPosition, null, Color.White, 0.0f, Vector2.Zero, 0.5f, SpriteEffects.None, 0.0f);
             }
 
             if (_openInventory)
             {
-                _spriteBatch.Draw(
-                    _inventory,
-                    new Vector2(100, 110),
-                    null,
-                    Color.White,
-                    0.0f,
-                    Vector2.Zero,
-                    7.0f,
-                    SpriteEffects.None,
-                    0.0f
+                _spriteBatch.Draw(_inventory, new Vector2(100, 110), null, Color.White,0.0f, Vector2.Zero, 7.0f, SpriteEffects.None, 0.0f
                 );
             }
-
                 _spriteBatch.End();
             base.Draw(gameTime);
         }
@@ -244,7 +242,7 @@ namespace Survival_Story
             if (ks.IsKeyDown(Keys.D)) movement.X += 1;
 
             if (movement != Vector2.Zero)
-            {
+            { //Normaliza el vector de movimiento para no acelerar de más en diagonal
                 movement.Normalize();
                 if (movement.X < 0 && movement.Y < 0) playerDirection = 6;
                 else if (movement.X > 0 && movement.Y < 0) playerDirection = 7;
@@ -254,14 +252,12 @@ namespace Survival_Story
                 else if (movement.Y > 0) playerDirection = 0;
                 else if (movement.X < 0) playerDirection = 2;
                 else if (movement.X > 0) playerDirection = 3;
-                animation(gameTime);
             }
             else
             {
-                currentAnimationIndex = 1;
                 playerTimer = 0f;
             }
-
+            animation(gameTime);
             int playerWidth = 35 * 2;
             int playerHeight = 36 * 2;
             Rectangle windowEdge = new Rectangle(0, 0, GraphicsDevice.PresentationParameters.BackBufferWidth, GraphicsDevice.PresentationParameters.BackBufferHeight);
@@ -353,6 +349,9 @@ namespace Survival_Story
         {
             Vector2 playerCenter = new Vector2(playerPosition.X + 35, playerPosition.Y + 36);
             KeyboardState ks = Keyboard.GetState();
+            if(ks.IsKeyDown(Keys.R)) {
+                for(int )
+            }
             if (ks.IsKeyDown(Keys.R) && _oldKS.IsKeyUp(Keys.R)) { picaxeEquipped = true; axeEquipped = false; shovelEquipped = false; }
             if (ks.IsKeyDown(Keys.T) && _oldKS.IsKeyUp(Keys.T)) { picaxeEquipped = false; axeEquipped = true; shovelEquipped = false; }
             if (ks.IsKeyDown(Keys.Y) && _oldKS.IsKeyUp(Keys.Y)) { picaxeEquipped = false; axeEquipped = false; shovelEquipped = true; }
