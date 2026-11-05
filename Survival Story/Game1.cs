@@ -19,6 +19,11 @@ namespace Survival_Story
         private Texture2D _woodAxe;
         private Texture2D _woodShovel;
         private Texture2D _inventory;
+        private Texture2D _menu;
+        private Texture2D _select_play;
+        private Texture2D _select_exit;
+        private Texture2D _select_controls;
+        private Texture2D _controls;
 
         private Vector2 playerPosition;
         private Vector2[] rockPosition;
@@ -32,7 +37,13 @@ namespace Survival_Story
         private bool[] sandActive;
         private bool axeEquipped;
         private bool shovelEquipped;
-        private bool picaxeEquipped; 
+        private bool picaxeEquipped;
+        private bool menuOpen;
+        private bool selectPlay;
+        private bool selectExit;
+        private bool selectExitcontrols;
+        private bool selectControls;
+        private bool controlsOpen;
 
         private float velocidadGlobal = 250.0f;
 
@@ -64,13 +75,14 @@ namespace Survival_Story
 
         protected override void Initialize()
         {
-            playerPosition = new Vector2(100, 100);
-            // poner grPosX * posHorizontal y grPosY * posVertical (0-inf??)
+            playerPosition = new Vector2(500, 300);
+            menuOpen = true;
+
 
             rockPosition = new Vector2[3];
-            rockPosition[0] = pos(1,1);
-            rockPosition[1] = pos(3,3);
-            rockPosition[2] = pos(5,5);
+            rockPosition[0] = pos(1, 1);
+            rockPosition[1] = pos(3, 3);
+            rockPosition[2] = pos(5, 5);
 
             rockActive = new bool[3];
             rockActive[0] = true;
@@ -78,9 +90,9 @@ namespace Survival_Story
             rockActive[2] = true;
 
             treePosition = new Vector2[3];
-            treePosition[0] = pos(1,3);
-            treePosition[1] = pos(3,5);
-            treePosition[2] = pos(5,1);
+            treePosition[0] = pos(1, 3);
+            treePosition[1] = pos(3, 5);
+            treePosition[2] = pos(5, 1);
 
             treeActive = new bool[3];
             treeActive[0] = true;
@@ -88,9 +100,9 @@ namespace Survival_Story
             treeActive[2] = true;
 
             sandPosition = new Vector2[3];
-            sandPosition[0] = pos(1,5);
-            sandPosition[1] = pos(3,1);
-            sandPosition[2] = pos(5,3);
+            sandPosition[0] = pos(1, 5);
+            sandPosition[1] = pos(3, 1);
+            sandPosition[2] = pos(5, 3);
 
             sandActive = new bool[3];
             sandActive[0] = true;
@@ -121,9 +133,14 @@ namespace Survival_Story
             _tree = Content.Load<Texture2D>("assets/images/tree");
             _map = Content.Load<Texture2D>("assets/images/map");
             _inventory = Content.Load<Texture2D>("assets/images/inventory");
+            _menu = Content.Load<Texture2D>("assets/images/menu");
             _woodPicaxe = Content.Load<Texture2D>("assets/images/woodPicaxe");
             _woodAxe = Content.Load<Texture2D>("assets/images/woodAxe");
-            _woodShovel = Content.Load<Texture2D>("assets/images/woodShovel"); 
+            _woodShovel = Content.Load<Texture2D>("assets/images/woodShovel");
+            _select_controls = Content.Load<Texture2D>("assets/images/controlButtons");
+            _select_play = Content.Load<Texture2D>("assets/images/play");
+            _select_exit = Content.Load<Texture2D>("assets/images/quit");
+            _controls = Content.Load<Texture2D>("assets/images/controls");
 
             playerRectangle = new Rectangle[8, 3];
             int playerWidth = 35;
@@ -140,11 +157,93 @@ namespace Survival_Story
         protected override void Update(GameTime gameTime)
         {
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
+            {
                 Exit();
+            }
 
-            collision(gameTime);
-            inventory();
-            interact();
+            MouseState mouse;
+
+            Rectangle botonPlay = new Rectangle(37, 90, 288, 96);
+            Rectangle botonControls = new Rectangle(91, 192, 288, 96);
+            Rectangle botonExit = new Rectangle(145, 294, 288, 96);
+            Rectangle botonExitcontrols = new Rectangle(345, 348, 288, 96);
+
+            mouse = Mouse.GetState();
+
+            if (mouse.LeftButton == ButtonState.Pressed && menuOpen == true && controlsOpen == false)
+            {
+                if (botonPlay.Contains(mouse.Position))
+                {
+                    menuOpen = false;
+                }
+            }
+            if (mouse.LeftButton == ButtonState.Pressed && menuOpen == true && controlsOpen == false)
+            {
+                if (botonExit.Contains(mouse.Position))
+                {
+                    Exit();
+                }
+            }
+            if (mouse.LeftButton == ButtonState.Pressed && menuOpen == true && controlsOpen == true)
+            {
+                if (botonExitcontrols.Contains(mouse.Position))
+                {
+                    controlsOpen = false;
+                }
+            }
+            if (mouse.LeftButton == ButtonState.Pressed && menuOpen == true && controlsOpen == false)
+            {
+                if (botonControls.Contains(mouse.Position))
+                {
+                    controlsOpen = true;
+                }
+            }
+            if (botonPlay.Contains(mouse.Position))
+            {
+                selectPlay = true;
+            }
+            else
+            {
+                selectPlay = false;
+            }
+
+            if (botonControls.Contains(mouse.Position))
+            {
+                selectControls = true;
+            }
+            else
+            {
+                selectControls = false;
+            }
+            if (botonExit.Contains(mouse.Position))
+            {
+                selectExit = true;
+            }
+            else
+            {
+                selectExit = false;
+            }
+            if (botonExitcontrols.Contains(mouse.Position))
+            {
+                selectExitcontrols = true;
+            }
+            else
+            {
+                selectExitcontrols = false;
+            }
+
+
+
+            if (menuOpen == false)
+            {
+                inventory();
+                interact();
+                collision(gameTime);
+            }
+
+
+            toolPosition.X = playerPosition.X + 50;
+            toolPosition.Y = playerPosition.Y + 30;
 
             _oldKS = Keyboard.GetState();
 
@@ -156,7 +255,7 @@ namespace Survival_Story
             GraphicsDevice.Clear(Color.CornflowerBlue);
             _spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp);
 
-            
+
             _spriteBatch.Draw(
                 _map,
                 mapPosition,
@@ -213,17 +312,40 @@ namespace Survival_Story
 
             if (_openInventory)
             {
-                _spriteBatch.Draw(_inventory, new Vector2(100, 110), null, Color.White,0.0f, Vector2.Zero, 7.0f, SpriteEffects.None, 0.0f
+                _spriteBatch.Draw(_inventory, new Vector2(100, 110), null, Color.White, 0.0f, Vector2.Zero, 7.0f, SpriteEffects.None, 0.0f
                 );
             }
-                _spriteBatch.End();
+
+            if (menuOpen == true)
+            {
+                _spriteBatch.Draw(_menu, Vector2.Zero, null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.0f);
+            }
+
+            if (selectPlay == true && menuOpen == true)
+            {
+                _spriteBatch.Draw(_select_play, new Vector2(37, 90), null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.0f);
+            }
+            if (selectControls == true && menuOpen == true)
+            {
+                _spriteBatch.Draw(_select_controls, new Vector2(91, 192), null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.0f);
+            }
+            if (selectExit == true && menuOpen == true)
+            {
+                _spriteBatch.Draw(_select_exit, new Vector2(145, 294), null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.0f);
+            }
+            if (controlsOpen == true)
+            {
+                _spriteBatch.Draw(_controls, Vector2.Zero, null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.0f);
+            }
+            if (selectExitcontrols == true && controlsOpen == true)
+            {
+                _spriteBatch.Draw(_select_exit, new Vector2(345, 348), null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.0f);
+            }
+
+            _spriteBatch.End();
             base.Draw(gameTime);
         }
 
-        private void registrarJugador()
-        {
-            ConnectDB.RegistrarJugador("Javier", "goat", "algo.gmail.com", 1167676767);
-        }
         private void collision(GameTime gameTime)
         {
             float delta = (float)gameTime.ElapsedGameTime.TotalSeconds;
@@ -252,8 +374,6 @@ namespace Survival_Story
                 playerTimer = 0f;
             }
             animation(gameTime);
-            toolPosition.X = playerPosition.X + 50;
-            toolPosition.Y = playerPosition.Y + 30;
             int playerWidth = 35 * 2;
             int playerHeight = 36 * 2;
             Rectangle windowEdge = new Rectangle(0, 0, GraphicsDevice.PresentationParameters.BackBufferWidth, GraphicsDevice.PresentationParameters.BackBufferHeight);
@@ -349,11 +469,6 @@ namespace Survival_Story
             if (ks.IsKeyDown(Keys.T) && _oldKS.IsKeyUp(Keys.T)) { picaxeEquipped = false; axeEquipped = true; shovelEquipped = false; }
             if (ks.IsKeyDown(Keys.Y) && _oldKS.IsKeyUp(Keys.Y)) { picaxeEquipped = false; axeEquipped = false; shovelEquipped = true; }
             if (ks.IsKeyDown(Keys.U) && _oldKS.IsKeyUp(Keys.U)) { picaxeEquipped = false; axeEquipped = false; shovelEquipped = false; }
-            
-            if (ks.IsKeyDown(Keys.G) && _oldKS.IsKeyUp(Keys.G))
-            {
-                registrarJugador();
-            }
 
             if (ks.IsKeyDown(Keys.E) && picaxeEquipped == true)
             {
