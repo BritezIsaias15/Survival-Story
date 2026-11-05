@@ -1,6 +1,7 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using Entradas;
 
 namespace Survival_Story
 {
@@ -144,8 +145,6 @@ namespace Survival_Story
             collision(gameTime);
             inventory();
             interact();
-            toolPosition.X = playerPosition.X + 50;
-            toolPosition.Y = playerPosition.Y + 30;
 
             _oldKS = Keyboard.GetState();
 
@@ -221,6 +220,10 @@ namespace Survival_Story
             base.Draw(gameTime);
         }
 
+        private void registrarJugador()
+        {
+            ConnectDB.RegistrarJugador("Javier", "goat", "algo.gmail.com", 1167676767);
+        }
         private void collision(GameTime gameTime)
         {
             float delta = (float)gameTime.ElapsedGameTime.TotalSeconds;
@@ -249,6 +252,8 @@ namespace Survival_Story
                 playerTimer = 0f;
             }
             animation(gameTime);
+            toolPosition.X = playerPosition.X + 50;
+            toolPosition.Y = playerPosition.Y + 30;
             int playerWidth = 35 * 2;
             int playerHeight = 36 * 2;
             Rectangle windowEdge = new Rectangle(0, 0, GraphicsDevice.PresentationParameters.BackBufferWidth, GraphicsDevice.PresentationParameters.BackBufferHeight);
@@ -345,6 +350,11 @@ namespace Survival_Story
             if (ks.IsKeyDown(Keys.Y) && _oldKS.IsKeyUp(Keys.Y)) { picaxeEquipped = false; axeEquipped = false; shovelEquipped = true; }
             if (ks.IsKeyDown(Keys.U) && _oldKS.IsKeyUp(Keys.U)) { picaxeEquipped = false; axeEquipped = false; shovelEquipped = false; }
             
+            if (ks.IsKeyDown(Keys.G) && _oldKS.IsKeyUp(Keys.G))
+            {
+                registrarJugador();
+            }
+
             if (ks.IsKeyDown(Keys.E) && picaxeEquipped == true)
             {
                 for (int i = 0; i < rockPosition.Length; i++)

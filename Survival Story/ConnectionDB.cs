@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -7,15 +7,15 @@ using MySqlConnector;
 
 namespace Entradas
 {
-    internal class ConexionBD
+    internal static class ConnectDB
     {
-        private string stringConexion = "Server=localhost;Port=3306;Database=supervivencia;User=root;Pwd=;";
+        private static string stringConexion = "Server=localhost;Port=3306;Database=supervivencia;User=root;Pwd=;";
 
         // NUEVO MÉTODO: Registra al jugador antes de guardar la partida
-        public void RegistrarJugador(int jugadorId, string nombreJugador, string nombreUsuarioJugador, string emailJugador, string telefonoJugador)
+        public static void RegistrarJugador(string nombreJugador, string nombreUsuarioJugador, string emailJugador, int telefonoJugador)
         {
             // Ajusta los nombres de las columnas ('jugador_id', 'nombre') según tu tabla real
-            string query = "INSERT INTO jugadores (nombre, nombre_usuario, email, teléfono)" + 
+            string query = "INSERT INTO player (nombre, nombre_usuario, email, teléfono)" + 
                            "VALUES (@nombre, @nombre_usuario, @email, @teléfono)";
 
             try
@@ -40,7 +40,7 @@ namespace Entradas
                 // Si el ID ya existe, MySQL dará error de llave primaria duplicada (código 1062)
                 if (ex.Number == 1062)
                 {
-                    System.Diagnostics.Debug.WriteLine($"El jugador con ID {jugadorId} ya estaba registrado. Continuamos...");
+                    System.Diagnostics.Debug.WriteLine($"Ya existe un jugador con el nombre '{nombreUsuarioJugador}. Continuamos...");
                 }
                 else
                 {
