@@ -19,6 +19,10 @@ namespace Survival_Story
         private bool menuOpen, controlsOpen, selectPlay, selectExit, selectExitControls, selectControls ;
         private bool picaxeEquipped, axeEquipped, shovelEquipped;
         private bool[] toolEquipped = new bool[3];
+        private string[] tools = 
+        {
+            _woodPicaxe, _woodAxe, _woodShovel
+        };
 
         private float velocidadGlobal = 250.0f;
 
@@ -57,9 +61,6 @@ namespace Survival_Story
         {
             playerPosition = new Vector2(500, 300);
             menuOpen = true;
-            toolEquipped[0] = false;
-            toolEquipped[1] = false;
-            toolEquipped[2] = false;
 
             rockPosition = new Vector2[3];
             rockPosition[0] = pos(1, 1);
@@ -257,6 +258,17 @@ namespace Survival_Story
                 _player, playerPosition, playerRectangle[playerDirection, currentAnimationIndex], Color.White, 0.0f, Vector2.Zero, 2.0f, SpriteEffects.None, 0.0f
             );
 
+            for(int i = 0; i < toolEquipped; i++)
+            {
+                if(toolEquipped[i])
+                {
+                    _spriteBatch.Draw(
+                        tools[i], toolPosition[i], null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.0f
+                    );
+                }
+            }
+
+            /*
             if (picaxeEquipped == true)
             {
                 _spriteBatch.Draw(_woodPicaxe, toolPosition, null, Color.White, 0.0f, Vector2.Zero, 0.5f, SpriteEffects.None, 0.0f);
@@ -268,7 +280,7 @@ namespace Survival_Story
             else if (shovelEquipped == true)
             {
                 _spriteBatch.Draw(_woodShovel, toolPosition, null, Color.White, 0.0f, Vector2.Zero, 0.5f, SpriteEffects.None, 0.0f);
-            }
+            }*/
 
             if (_openInventory)
             {
