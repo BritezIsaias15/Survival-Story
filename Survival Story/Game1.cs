@@ -16,16 +16,15 @@ namespace Survival_Story
         private Vector2 movement, playerPosition, toolPosition, mapPosition;
         private Vector2[] rockPosition, treePosition, sandPosition;
 
-        private bool[] rockActive, treeActive, sandActive ;
-        private bool menuOpen, controlsOpen, selectPlay, selectExit, selectExitControls, selectControls ;
-        private bool picaxeEquipped, axeEquipped, shovelEquipped;
-        private bool[] toolEquipped = new bool[3];
+        private bool[] rockActive, treeActive, sandActive;//entidades
+        private bool menuOpen, controlsOpen, selectPlay, selectExit, selectExitControls, selectControls ;//menu
+        private bool[] toolEquipped = new bool[3];//herramienta
 
         private float velocidadGlobal = 250.0f;
 
-        private int toolIndicate;
         private int playerWidth = 35 * 2;
         private int playerHeight = 36 * 2;
+        private int toolIndicate;
 
         private float playerTimer;
         private int threshold;
@@ -35,6 +34,7 @@ namespace Survival_Story
         private byte previousAnimationIndex;
         private byte currentAnimationIndex;
         private int playerDirection;
+        private int idPlayer;
 
         private bool _openInventory = false;
         private MouseState _curMS, _oldMS;
@@ -208,6 +208,11 @@ namespace Survival_Story
                 movementPlayer(gameTime);
                 interact();
                 collision(gameTime);
+
+                if(_curKS.IsKeyDown(Keys.G) && _oldKS.IsKeyUp(Keys.G))
+                {
+                    ConnectDB.ConsultarElemento(1);
+                }
             }
 
             base.Update(gameTime);
@@ -301,28 +306,29 @@ namespace Survival_Story
             {
                 _spriteBatch.Draw(_menu, Vector2.Zero, null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.0f);
             }
-
-            if (selectPlay == true && menuOpen == true)
+            if(menuOpen)
             {
-                _spriteBatch.Draw(_select_play, new Vector2(37, 90), null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.0f);
+                if (selectPlay)
+                {
+                    _spriteBatch.Draw(_select_play, new Vector2(37, 90), null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.0f);
+                }
+                if (selectControls)
+                {
+                    _spriteBatch.Draw(_select_controls, new Vector2(91, 192), null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.0f);
+                }
+                if (selectExit)
+                {
+                    _spriteBatch.Draw(_select_exit, new Vector2(145, 294), null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.0f);
+                }
+                if (controlsOpen)
+                {
+                    _spriteBatch.Draw(_controls, Vector2.Zero, null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.0f);
+                    if(selectExitControls)
+                    {
+                        _spriteBatch.Draw(_select_exit, new Vector2(345, 348), null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.0f);
+                    }
+                }
             }
-            if (selectControls == true && menuOpen == true)
-            {
-                _spriteBatch.Draw(_select_controls, new Vector2(91, 192), null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.0f);
-            }
-            if (selectExit == true && menuOpen == true)
-            {
-                _spriteBatch.Draw(_select_exit, new Vector2(145, 294), null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.0f);
-            }
-            if (controlsOpen == true)
-            {
-                _spriteBatch.Draw(_controls, Vector2.Zero, null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.0f);
-            }
-            if (selectExitControls == true && controlsOpen == true)
-            {
-                _spriteBatch.Draw(_select_exit, new Vector2(345, 348), null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.0f);
-            }
-
             _spriteBatch.End();
             base.Draw(gameTime);
         }
@@ -446,7 +452,7 @@ namespace Survival_Story
         { //35x36
             Vector2 playerCenter = new Vector2(playerPosition.X + (playerWidth / 2f), playerPosition.Y + (playerHeight /2f));
 
-            if(_curKS.IsKeyDown(Keys.R)) toolIndicate = 0;
+            if (_curKS.IsKeyDown(Keys.R)) toolIndicate = 0;
             if(_curKS.IsKeyDown(Keys.T)) toolIndicate = 1;
             if(_curKS.IsKeyDown(Keys.Y)) toolIndicate = 2;
             if(_curKS.IsKeyDown(Keys.U)) toolIndicate = -1;
