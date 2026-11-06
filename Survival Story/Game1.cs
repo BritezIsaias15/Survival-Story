@@ -16,15 +16,15 @@ namespace Survival_Story
         private Vector2 movement, playerPosition, toolPosition, mapPosition;
         private Vector2[] rockPosition, treePosition, sandPosition;
 
-        private bool[] rockActive, treeActive, sandActive;
-        private bool menuOpen, controlsOpen, selectPlay, selectExit, selectExitControls, selectControls ;
-        private bool[] toolEquipped = new bool[3];
+        private bool[] rockActive, treeActive, sandActive;//entidades
+        private bool menuOpen, controlsOpen, selectPlay, selectExit, selectExitControls, selectControls ;//menu
+        private bool[] toolEquipped = new bool[3];//herramienta
 
         private float velocidadGlobal = 250.0f;
 
-        private int toolIndicate;
         private int playerWidth = 35 * 2;
         private int playerHeight = 36 * 2;
+        private int toolIndicate;
 
         private float playerTimer;
         private int threshold;
@@ -34,6 +34,7 @@ namespace Survival_Story
         private byte previousAnimationIndex;
         private byte currentAnimationIndex;
         private int playerDirection;
+        private int idPlayer;
 
         private bool _openInventory = false;
         private MouseState _curMS, _oldMS;
@@ -203,6 +204,11 @@ namespace Survival_Story
                 movementPlayer(gameTime);
                 interact();
                 collision(gameTime);
+
+                if(_curKS.IsKeyDown(Keys.G) && _oldKS.IsKeyUp(Keys.G))
+                {
+                    ConnectDB.ConsultarElemento(1);
+                }
             }
 
             base.Update(gameTime);
