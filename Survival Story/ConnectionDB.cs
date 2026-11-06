@@ -81,4 +81,47 @@ namespace Entradas //Código sin uso, modificar y copiar para las distintas tabl
             }
         }
     }
+    /*
+     // Modificamos el método para que devuelva un Tuple (varios valores a la vez) o podés usar una clase propia
+public static (string nombre, int cantidad) AsignarVariablesRecurso(int id)
+{
+    string query = "SELECT nombre, cantidad FROM resources WHERE id = @id";
+    
+    // Variables locales listas para recibir los valores de la consulta
+    string nombreAsignado = "No encontrado";
+    int cantidadAsignada = 0;
+
+    try
+    {
+        using (MySqlConnection conexion = new MySqlConnection(stringConexion))
+        {
+            conexion.Open();
+            using (MySqlCommand comando = new MySqlCommand(query, conexion))
+            {
+                comando.Parameters.AddWithValue("@id", id);
+                using (MySqlDataReader lector = comando.ExecuteReader())
+                {
+                    if (lector.HasRows && lector.Read())
+                    {
+                        // ACÁ SE ASIGNAN LOS VALORES A LAS VARIABLES
+                        nombreAsignado = lector.GetString("nombre");
+                        cantidadAsignada = lector.GetInt32("cantidad");
+                    }
+                }
+            }
+        }
+    }
+    catch (MySqlException ex)
+    {
+        System.Diagnostics.Debug.WriteLine($"Error: {ex.Message}");
+    }
+
+    // Retornamos las variables con los valores asignados
+    return (nombreAsignado, cantidadAsignada);
+}
+
+    var recurso = ConnectDB.AsignarVariablesRecurso(5);
+    string nombre = recurso.nombre;
+    int cantidad = recurso.cantidad;
+     */
 }
