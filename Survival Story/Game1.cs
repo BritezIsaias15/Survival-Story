@@ -263,7 +263,7 @@ namespace Survival_Story
                 if(toolEquipped[i])
                 {
                     _spriteBatch.Draw(
-                        tools[i], toolPosition[i], null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.0f
+                        tools[i], toolPosition, null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.0f
                     );
                 }
             }
