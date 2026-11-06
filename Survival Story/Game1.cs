@@ -18,8 +18,11 @@ namespace Survival_Story
         private bool[] rockActive, treeActive, sandActive;
         private bool menuOpen, controlsOpen, selectPlay, selectExit, selectExitControls, selectControls ;
         private bool picaxeEquipped, axeEquipped, shovelEquipped;
-        private bool[] toolsEquipped = new bool[3];
+        private bool[] toolEquipped = new bool[3];
+
         private float velocidadGlobal = 250.0f;
+
+        private int toolIndicate;
         private int playerWidth = 35 * 2;
         private int playerHeight = 36 * 2;
 
@@ -54,9 +57,9 @@ namespace Survival_Story
         {
             playerPosition = new Vector2(500, 300);
             menuOpen = true;
-            toolsEquipped[0] = false;
-            toolsEquipped[1] = false;
-            toolsEquipped[2] = false;
+            toolEquipped[0] = false;
+            toolEquipped[1] = false;
+            toolEquipped[2] = false;
 
             rockPosition = new Vector2[3];
             rockPosition[0] = pos(1, 1);
@@ -201,7 +204,7 @@ namespace Survival_Story
             {
                 inventory();
                 movementPlayer(gameTime);
-                //interact();
+                interact();
                 collision(gameTime);
             }
 
@@ -422,17 +425,18 @@ namespace Survival_Story
         { //35x36
             Vector2 playerCenter = new Vector2(playerWidth);
             KeyboardState ks = Keyboard.GetState();
-            if (ks.IsKeyDown(Keys.R) && _oldKS.IsKeyUp(Keys.R))
+            switch (_curKS.IsKeyDown)
             {
-                for(int i = 0; i < toolsEquipped.Length; i++)
-                {
-                    toolsEquipped[i] = (i == 0) ? true : false;
-                }
+                case Keys.R: toolIndicate = 0; break;
+                case Keys.T: toolIndicate = 1; break;
+                case Keys.Y: toolIndicate = 2; break;
+                case Keys.U: toolIndicate = -1; break;
             }
-            if (ks.IsKeyDown(Keys.T) && _oldKS.IsKeyUp(Keys.T)) { picaxeEquipped = false; axeEquipped = true; shovelEquipped = false; }
-            if (ks.IsKeyDown(Keys.Y) && _oldKS.IsKeyUp(Keys.Y)) { picaxeEquipped = false; axeEquipped = false; shovelEquipped = true; }
-            if (ks.IsKeyDown(Keys.U) && _oldKS.IsKeyUp(Keys.U)) { picaxeEquipped = false; axeEquipped = false; shovelEquipped = false; }
-
+            for(int i = 0; i < toolEquipped; i++)
+            {
+                toolEquipped[i] = (i == toolIndicate) ? true : false;
+            }
+            
             if (ks.IsKeyDown(Keys.E) && picaxeEquipped == true)
             {
                 for (int i = 0; i < rockPosition.Length; i++)
@@ -482,6 +486,7 @@ namespace Survival_Story
                 }
             }
         }
+        
         private void animation(GameTime gameTime)
         {
             playerTimer += (float)gameTime.ElapsedGameTime.TotalMilliseconds;
