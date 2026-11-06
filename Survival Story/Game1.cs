@@ -18,7 +18,6 @@ namespace Survival_Story
 
         private bool[] rockActive, treeActive, sandActive;
         private bool menuOpen, controlsOpen, selectPlay, selectExit, selectExitControls, selectControls ;
-        private bool picaxeEquipped, axeEquipped, shovelEquipped;
         private bool[] toolEquipped = new bool[3];
 
         private float velocidadGlobal = 250.0f;
@@ -277,28 +276,29 @@ namespace Survival_Story
             {
                 _spriteBatch.Draw(_menu, Vector2.Zero, null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.0f);
             }
-
-            if (selectPlay == true && menuOpen == true)
+            if(menuOpen)
             {
-                _spriteBatch.Draw(_select_play, new Vector2(37, 90), null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.0f);
+                if (selectPlay)
+                {
+                    _spriteBatch.Draw(_select_play, new Vector2(37, 90), null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.0f);
+                }
+                if (selectControls)
+                {
+                    _spriteBatch.Draw(_select_controls, new Vector2(91, 192), null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.0f);
+                }
+                if (selectExit)
+                {
+                    _spriteBatch.Draw(_select_exit, new Vector2(145, 294), null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.0f);
+                }
+                if (controlsOpen)
+                {
+                    _spriteBatch.Draw(_controls, Vector2.Zero, null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.0f);
+                    if(selectExitControls)
+                    {
+                        _spriteBatch.Draw(_select_exit, new Vector2(345, 348), null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.0f);
+                    }
+                }
             }
-            if (selectControls == true && menuOpen == true)
-            {
-                _spriteBatch.Draw(_select_controls, new Vector2(91, 192), null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.0f);
-            }
-            if (selectExit == true && menuOpen == true)
-            {
-                _spriteBatch.Draw(_select_exit, new Vector2(145, 294), null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.0f);
-            }
-            if (controlsOpen == true)
-            {
-                _spriteBatch.Draw(_controls, Vector2.Zero, null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.0f);
-            }
-            if (selectExitControls == true && controlsOpen == true)
-            {
-                _spriteBatch.Draw(_select_exit, new Vector2(345, 348), null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.0f);
-            }
-
             _spriteBatch.End();
             base.Draw(gameTime);
         }
