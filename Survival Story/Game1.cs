@@ -10,42 +10,18 @@ namespace Survival_Story
         private GraphicsDeviceManager _graphics;
         private SpriteBatch _spriteBatch;
 
-        private Texture2D _player;
-        private Texture2D _rock;
-        private Texture2D _tree;
-        private Texture2D _sand;
-        private Texture2D _map;
-        private Texture2D _woodPicaxe;
-        private Texture2D _woodAxe;
-        private Texture2D _woodShovel;
-        private Texture2D _inventory;
-        private Texture2D _menu;
-        private Texture2D _select_play;
-        private Texture2D _select_exit;
-        private Texture2D _select_controls;
-        private Texture2D _controls;
+         private Texture2D _player, _rock, _tree, _sand, _map, _woodPicaxe, _woodAxe, _woodShovel, _inventory, _menu, _select_play, _select_exit, _select_controls, _controls;
 
-        private Vector2 playerPosition;
-        private Vector2[] rockPosition;
-        private Vector2[] treePosition;
-        private Vector2[] sandPosition;
-        private Vector2 toolPosition;
-        private Vector2 mapPosition;
+        private Vector2 movement, playerPosition, toolPosition, mapPosition;
+        private Vector2[] rockPosition, treePosition, sandPosition;
 
-        private bool[] rockActive;
-        private bool[] treeActive;
-        private bool[] sandActive;
-        private bool axeEquipped;
-        private bool shovelEquipped;
-        private bool picaxeEquipped;
-        private bool menuOpen;
-        private bool selectPlay;
-        private bool selectExit;
-        private bool selectExitcontrols;
-        private bool selectControls;
-        private bool controlsOpen;
-
+        private bool[] rockActive, treeActive, sandActive;
+        private bool menuOpen, controlsOpen, selectPlay, selectExit, selectExitControls, selectControls ;
+        private bool picaxeEquipped, axeEquipped, shovelEquipped;
+        private bool[] toolsEquipped = new bool[3];
         private float velocidadGlobal = 250.0f;
+        private int playerWidth = 35 * 2;
+        private int playerHeight = 36 * 2;
 
         private float playerTimer;
         private int threshold;
@@ -57,7 +33,8 @@ namespace Survival_Story
         private int playerDirection;
 
         private bool _openInventory = false;
-        private KeyboardState _oldKS;
+        private MouseState _curMS, _oldMS;
+        private KeyboardState _curKS, _oldKS;
 
 
         public Game1()
@@ -77,7 +54,9 @@ namespace Survival_Story
         {
             playerPosition = new Vector2(500, 300);
             menuOpen = true;
-
+            toolsEquipped[0] = false;
+            toolsEquipped[1] = false;
+            toolsEquipped[2] = false;
 
             rockPosition = new Vector2[3];
             rockPosition[0] = pos(1, 1);
@@ -109,16 +88,9 @@ namespace Survival_Story
             sandActive[1] = true;
             sandActive[2] = true;
 
-            picaxeEquipped = true;
-            axeEquipped = false;
-            shovelEquipped = false;
-
             mapPosition = new Vector2(0, 0);
             playerTimer = 0f;
             threshold = 250;
-            playerDirection = 0;
-            previousAnimationIndex = 2;
-            currentAnimationIndex = 1;
 
             base.Initialize();
         }
@@ -156,96 +128,82 @@ namespace Survival_Story
 
         protected override void Update(GameTime gameTime)
         {
-            if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
+            _oldKS = _curKS;
+            _curKS = Keyboard.GetState();
+            _oldMS = _curMS;
+            _curMS = Mouse.GetState();
+
+            bool singleClick = (_curMS.LeftButton == ButtonState.Pressed && _oldMS.LeftButton == ButtonState.Released);
+
+            if (_curKS.IsKeyDown(Keys.Escape) && _oldKS.IsKeyUp(Keys.Escape))
             {
-                Exit();
-            }
-
-            MouseState mouse;
-
-            Rectangle botonPlay = new Rectangle(37, 90, 288, 96);
-            Rectangle botonControls = new Rectangle(91, 192, 288, 96);
-            Rectangle botonExit = new Rectangle(145, 294, 288, 96);
-            Rectangle botonExitcontrols = new Rectangle(345, 348, 288, 96);
-
-            mouse = Mouse.GetState();
-
-            if (mouse.LeftButton == ButtonState.Pressed && menuOpen == true && controlsOpen == false)
-            {
-                if (botonPlay.Contains(mouse.Position))
-                {
-                    menuOpen = false;
-                }
-            }
-            if (mouse.LeftButton == ButtonState.Pressed && menuOpen == true && controlsOpen == false)
-            {
-                if (botonExit.Contains(mouse.Position))
+                if (menuOpen == true)
                 {
                     Exit();
                 }
-            }
-            if (mouse.LeftButton == ButtonState.Pressed && menuOpen == true && controlsOpen == true)
-            {
-                if (botonExitcontrols.Contains(mouse.Position))
+                else
                 {
-                    controlsOpen = false;
+                    menuOpen = true;
                 }
             }
-            if (mouse.LeftButton == ButtonState.Pressed && menuOpen == true && controlsOpen == false)
+
+            Rectangle buttonPlay = new Rectangle(37, 90, 288, 96);
+            Rectangle buttonControls = new Rectangle(91, 192, 288, 96);
+            Rectangle buttonExit = new Rectangle(145, 294, 288, 96);
+            Rectangle buttonExitControls = new Rectangle(345, 348, 288, 96);
+
+            if(menuOpen)
             {
-                if (botonControls.Contains(mouse.Position))
+                if(!controlsOpen)
                 {
-                    controlsOpen = true;
+                    if(buttonPlay.Contains(_curMS.Position))
+                    {
+                        selectPlay = true;
+                        if(singleClick) menuOpen = false;
+                    }
+                    else
+                    {
+                        selectPlay = false;
+                    }
+                    if(buttonControls.Contains(_curMS.Position))
+                    {
+                        selectControls = true;
+                        if(singleClick)controlsOpen = true;
+                    }
+                    else
+                    {
+                        selectControls = false;
+                    }
+                    if(buttonExit.Contains(_curMS.Position))
+                    {
+                        selectExit = true;
+                        if(singleClick) Exit();
+                    }
+                    else
+                    {
+                        selectExit = false;
+                    }
+                }
+                else if(controlsOpen)
+                {
+                    if(buttonExitControls.Contains(_curMS.Position))
+                    {
+                        selectExitControls = true;
+                        if(singleClick)controlsOpen = false;
+                    }
+                    else
+                    {
+                        selectExitControls = false;
+                    }
                 }
             }
-            if (botonPlay.Contains(mouse.Position))
-            {
-                selectPlay = true;
-            }
-            else
-            {
-                selectPlay = false;
-            }
-
-            if (botonControls.Contains(mouse.Position))
-            {
-                selectControls = true;
-            }
-            else
-            {
-                selectControls = false;
-            }
-            if (botonExit.Contains(mouse.Position))
-            {
-                selectExit = true;
-            }
-            else
-            {
-                selectExit = false;
-            }
-            if (botonExitcontrols.Contains(mouse.Position))
-            {
-                selectExitcontrols = true;
-            }
-            else
-            {
-                selectExitcontrols = false;
-            }
-
-
-
-            if (menuOpen == false)
+            else if(!menuOpen)
             {
                 inventory();
-                interact();
+                movementPlayer(gameTime);
+                //interact();
                 collision(gameTime);
             }
-
-
-            toolPosition.X = playerPosition.X + 50;
-            toolPosition.Y = playerPosition.Y + 30;
-
-            _oldKS = Keyboard.GetState();
 
             base.Update(gameTime);
         }
@@ -254,7 +212,6 @@ namespace Survival_Story
         {
             GraphicsDevice.Clear(Color.CornflowerBlue);
             _spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp);
-
 
             _spriteBatch.Draw(
                 _map,
@@ -337,7 +294,7 @@ namespace Survival_Story
             {
                 _spriteBatch.Draw(_controls, Vector2.Zero, null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.0f);
             }
-            if (selectExitcontrols == true && controlsOpen == true)
+            if (selectExitControls == true && controlsOpen == true)
             {
                 _spriteBatch.Draw(_select_exit, new Vector2(345, 348), null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.0f);
             }
@@ -346,16 +303,14 @@ namespace Survival_Story
             base.Draw(gameTime);
         }
 
-        private void collision(GameTime gameTime)
+        private void movementPlayer(GameTime gameTime)
         {
-            float delta = (float)gameTime.ElapsedGameTime.TotalSeconds;
-            KeyboardState ks = Keyboard.GetState();
-            Vector2 movement = Vector2.Zero;
+            movement = Vector2.Zero;
 
-            if (ks.IsKeyDown(Keys.W)) movement.Y -= 1;
-            if (ks.IsKeyDown(Keys.S)) movement.Y += 1;
-            if (ks.IsKeyDown(Keys.A)) movement.X -= 1;
-            if (ks.IsKeyDown(Keys.D)) movement.X += 1;
+            if (_curKS.IsKeyDown(Keys.W)) movement.Y -= 1;
+            if (_curKS.IsKeyDown(Keys.S)) movement.Y += 1;
+            if (_curKS.IsKeyDown(Keys.A)) movement.X -= 1;
+            if (_curKS.IsKeyDown(Keys.D)) movement.X += 1;
 
             if (movement != Vector2.Zero)
             { //Normaliza el vector de movimiento para no acelerar de más en diagonal
@@ -374,8 +329,11 @@ namespace Survival_Story
                 playerTimer = 0f;
             }
             animation(gameTime);
-            int playerWidth = 35 * 2;
-            int playerHeight = 36 * 2;
+        }
+        private void collision(GameTime gameTime)
+        {
+            float delta = (float)gameTime.ElapsedGameTime.TotalSeconds;
+
             Rectangle windowEdge = new Rectangle(0, 0, GraphicsDevice.PresentationParameters.BackBufferWidth, GraphicsDevice.PresentationParameters.BackBufferHeight);
 
             playerPosition.X += movement.X * velocidadGlobal * delta;
@@ -455,17 +413,22 @@ namespace Survival_Story
         }
         private void inventory()
         {
-            KeyboardState ks = Keyboard.GetState();
-            if (ks.IsKeyDown(Keys.Tab) && _oldKS.IsKeyUp(Keys.Tab))
+            if (_curKS.IsKeyDown(Keys.Tab) && _oldKS.IsKeyUp(Keys.Tab))
             {
                 _openInventory = !_openInventory;
             }
         }
         private void interact()
-        {
-            Vector2 playerCenter = new Vector2(playerPosition.X + 35, playerPosition.Y + 36);
+        { //35x36
+            Vector2 playerCenter = new Vector2(playerWidth);
             KeyboardState ks = Keyboard.GetState();
-            if (ks.IsKeyDown(Keys.R) && _oldKS.IsKeyUp(Keys.R)) { picaxeEquipped = true; axeEquipped = false; shovelEquipped = false; }
+            if (ks.IsKeyDown(Keys.R) && _oldKS.IsKeyUp(Keys.R))
+            {
+                for(int i = 0; i < toolsEquipped.Length; i++)
+                {
+                    toolsEquipped[i] = (i == 0) ? true : false;
+                }
+            }
             if (ks.IsKeyDown(Keys.T) && _oldKS.IsKeyUp(Keys.T)) { picaxeEquipped = false; axeEquipped = true; shovelEquipped = false; }
             if (ks.IsKeyDown(Keys.Y) && _oldKS.IsKeyUp(Keys.Y)) { picaxeEquipped = false; axeEquipped = false; shovelEquipped = true; }
             if (ks.IsKeyDown(Keys.U) && _oldKS.IsKeyUp(Keys.U)) { picaxeEquipped = false; axeEquipped = false; shovelEquipped = false; }
