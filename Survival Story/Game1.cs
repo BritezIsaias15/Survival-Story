@@ -420,9 +420,9 @@ namespace Survival_Story
         }
         private void interact()
         { //35x36
-            Vector2 playerCenter = new Vector2(playerWidth);
+            Vector2 playerCenter = new Vector2(playerPosition.X + (playerWidth / 2f), playerPosition.Y + (playerHeight / 2f));
 
-            if(_curKS.IsKeyDown(Keys.R)) toolIndicate = 0;
+            if (_curKS.IsKeyDown(Keys.R)) toolIndicate = 0;
             if(_curKS.IsKeyDown(Keys.T)) toolIndicate = 1;
             if(_curKS.IsKeyDown(Keys.Y)) toolIndicate = 2;
             if(_curKS.IsKeyDown(Keys.U)) toolIndicate = -1;
@@ -482,6 +482,8 @@ namespace Survival_Story
                     }
                 }
             }
+            toolPosition.X = playerPosition.X;
+            toolPosition.Y = playerPosition.Y;
         }
         
         private void animation(GameTime gameTime)
