@@ -2,6 +2,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Entradas;
+using System.ComponentModel;
 
 namespace Survival_Story
 {
@@ -10,7 +11,7 @@ namespace Survival_Story
         private GraphicsDeviceManager _graphics;
         private SpriteBatch _spriteBatch;
 
-         private Texture2D _player, _rock, _tree, _sand, _map, _woodPicaxe, _woodAxe, _woodShovel, _inventory, _menu, _select_play, _select_exit, _select_controls, _controls;
+        private Texture2D _player, _rock, _tree, _sand, _map, _woodPicaxe, _woodAxe, _woodShovel, _inventory, _menu, _select_play, _select_exit, _select_controls, _controls;
 
         private Vector2 movement, playerPosition, toolPosition, mapPosition;
         private Vector2[] rockPosition, treePosition, sandPosition;
@@ -19,10 +20,6 @@ namespace Survival_Story
         private bool menuOpen, controlsOpen, selectPlay, selectExit, selectExitControls, selectControls ;
         private bool picaxeEquipped, axeEquipped, shovelEquipped;
         private bool[] toolEquipped = new bool[3];
-        private string[] tools = 
-        {
-            _woodPicaxe, _woodAxe, _woodShovel
-        };
 
         private float velocidadGlobal = 250.0f;
 
@@ -258,34 +255,22 @@ namespace Survival_Story
                 _player, playerPosition, playerRectangle[playerDirection, currentAnimationIndex], Color.White, 0.0f, Vector2.Zero, 2.0f, SpriteEffects.None, 0.0f
             );
 
-            for(int i = 0; i < toolEquipped; i++)
-            {
-                if(toolEquipped[i])
-                {
-                    _spriteBatch.Draw(
-                        tools[i], toolPosition, null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.0f
-                    );
-                }
-            }
-
-            /*
-            if (picaxeEquipped == true)
+            if (toolEquipped[0])
             {
                 _spriteBatch.Draw(_woodPicaxe, toolPosition, null, Color.White, 0.0f, Vector2.Zero, 0.5f, SpriteEffects.None, 0.0f);
             }
-            else if (axeEquipped == true)
+            else if (toolEquipped[1])
             {
                 _spriteBatch.Draw(_woodAxe, toolPosition, null, Color.White, 0.0f, Vector2.Zero, 0.5f, SpriteEffects.None, 0.0f);
             }
-            else if (shovelEquipped == true)
+            else if (toolEquipped[2])
             {
                 _spriteBatch.Draw(_woodShovel, toolPosition, null, Color.White, 0.0f, Vector2.Zero, 0.5f, SpriteEffects.None, 0.0f);
-            }*/
+            }
 
             if (_openInventory)
             {
-                _spriteBatch.Draw(_inventory, new Vector2(100, 110), null, Color.White, 0.0f, Vector2.Zero, 7.0f, SpriteEffects.None, 0.0f
-                );
+                _spriteBatch.Draw(_inventory, new Vector2(100, 110), null, Color.White, 0.0f, Vector2.Zero, 7.0f, SpriteEffects.None, 0.0f);
             }
 
             if (menuOpen == true)
@@ -436,63 +421,63 @@ namespace Survival_Story
         private void interact()
         { //35x36
             Vector2 playerCenter = new Vector2(playerWidth);
-            KeyboardState ks = Keyboard.GetState();
-            switch (_curKS.IsKeyDown)
-            {
-                case Keys.R: toolIndicate = 0; break;
-                case Keys.T: toolIndicate = 1; break;
-                case Keys.Y: toolIndicate = 2; break;
-                case Keys.U: toolIndicate = -1; break;
-            }
-            for(int i = 0; i < toolEquipped; i++)
+
+            if(_curKS.IsKeyDown(Keys.R)) toolIndicate = 0;
+            if(_curKS.IsKeyDown(Keys.T)) toolIndicate = 1;
+            if(_curKS.IsKeyDown(Keys.Y)) toolIndicate = 2;
+            if(_curKS.IsKeyDown(Keys.U)) toolIndicate = -1;
+
+            for (int i = 0; i < toolEquipped.Length; i++)
             {
                 toolEquipped[i] = (i == toolIndicate) ? true : false;
             }
-            
-            if (ks.IsKeyDown(Keys.E) && picaxeEquipped == true)
+            if(_curKS.IsKeyDown(Keys.E))
             {
-                for (int i = 0; i < rockPosition.Length; i++)
+                if (toolEquipped[0])
                 {
-                    if (rockActive[i])
+                    for (int i = 0; i < rockPosition.Length; i++)
                     {
-                        Vector2 rockCenter = new Vector2(rockPosition[i].X + (_rock.Width / 2), rockPosition[i].Y + (_rock.Height / 2));
-                        float distance = Vector2.Distance(playerCenter, rockCenter);
-                        if (distance < 80.0f)
+                        if (rockActive[i])
                         {
-                            rockActive[i] = false;
-                            break;
+                            Vector2 rockCenter = new Vector2(rockPosition[i].X + (_rock.Width / 2), rockPosition[i].Y + (_rock.Height / 2));
+                            float distance = Vector2.Distance(playerCenter, rockCenter);
+                            if (distance < 80.0f)
+                            {
+                                rockActive[i] = false;
+                                break;
+                            }
                         }
                     }
                 }
-            }
-            if (ks.IsKeyDown(Keys.E) && axeEquipped == true)
-            {
-                for (int i = 0; i < treePosition.Length; i++)
+                if (toolEquipped[1])
                 {
-                    if (treeActive[i])
+                    for (int i = 0; i < treePosition.Length; i++)
                     {
-                        Vector2 treeCenter = new Vector2(treePosition[i].X + (_tree.Width / 2), treePosition[i].Y + (_tree.Height / 2));
-                        float distance = Vector2.Distance(playerCenter, treeCenter);
-                        if (distance < 90.0f)
+                        if (treeActive[i])
                         {
-                            treeActive[i] = false;
-                            break;
+                            Vector2 treeCenter = new Vector2(treePosition[i].X + (_tree.Width / 2), treePosition[i].Y + (_tree.Height / 2));
+                            float distance = Vector2.Distance(playerCenter, treeCenter);
+                            if (distance < 90.0f)
+                            {
+                                treeActive[i] = false;
+                                break;
+                            }
                         }
                     }
                 }
-            }
-            if (ks.IsKeyDown(Keys.E) && shovelEquipped == true)
-            {
-                for (int i = 0; i < sandPosition.Length; i++)
+                if (toolEquipped[2])
                 {
-                    if (sandActive[i])
+                    for (int i = 0; i < sandPosition.Length; i++)
                     {
-                        Vector2 sandCenter = new Vector2(sandPosition[i].X + (_sand.Width / 2), sandPosition[i].Y + (_sand.Height / 2));
-                        float distance = Vector2.Distance(playerCenter, sandCenter);
-                        if (distance < 80.0f)
+                        if (sandActive[i])
                         {
-                            sandActive[i] = false;
-                            break;
+                            Vector2 sandCenter = new Vector2(sandPosition[i].X + (_sand.Width / 2), sandPosition[i].Y + (_sand.Height / 2));
+                            float distance = Vector2.Distance(playerCenter, sandCenter);
+                            if (distance < 80.0f)
+                            {
+                                sandActive[i] = false;
+                                break;
+                            }
                         }
                     }
                 }
