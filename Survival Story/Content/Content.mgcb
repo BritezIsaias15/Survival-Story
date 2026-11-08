@@ -13,7 +13,7 @@
 
 #---------------------------------- Content ---------------------------------#
 
-#begin assets/images/bottom tree.png
+#begin assets/images/bottomTree.png
 /importer:TextureImporter
 /processor:TextureProcessor
 /processorParam:ColorKeyColor=255,0,255,255
@@ -23,7 +23,7 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:assets/images/bottom tree.png
+/build:assets/images/bottomTree.png
 
 #begin assets/images/controlButtons.png
 /importer:TextureImporter
@@ -121,18 +121,6 @@
 /processorParam:TextureFormat=Color
 /build:assets/images/quit.png
 
-#begin assets/images/rock-drop.png
-/importer:TextureImporter
-/processor:TextureProcessor
-/processorParam:ColorKeyColor=255,0,255,255
-/processorParam:ColorKeyEnabled=True
-/processorParam:GenerateMipmaps=False
-/processorParam:PremultiplyAlpha=True
-/processorParam:ResizeToPowerOfTwo=False
-/processorParam:MakeSquare=False
-/processorParam:TextureFormat=Color
-/build:assets/images/rock-drop.png;assets/images/rock-drop
-
 #begin assets/images/rock.png
 /importer:TextureImporter
 /processor:TextureProcessor
@@ -145,7 +133,7 @@
 /processorParam:TextureFormat=Color
 /build:assets/images/rock.png
 
-#begin assets/images/sand-drop.png
+#begin assets/images/rockDrop.png
 /importer:TextureImporter
 /processor:TextureProcessor
 /processorParam:ColorKeyColor=255,0,255,255
@@ -155,7 +143,7 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:assets/images/sand-drop.png
+/build:assets/images/rockDrop.png
 
 #begin assets/images/sand.png
 /importer:TextureImporter
@@ -167,9 +155,9 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:assets/images/sand.png;assets/images/sand
+/build:assets/images/sand.png
 
-#begin assets/images/top tree.png
+#begin assets/images/sandDrop.png
 /importer:TextureImporter
 /processor:TextureProcessor
 /processorParam:ColorKeyColor=255,0,255,255
@@ -179,9 +167,9 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:assets/images/top tree.png
+/build:assets/images/sandDrop.png
 
-#begin assets/images/tree.png
+#begin assets/images/topTree.png
 /importer:TextureImporter
 /processor:TextureProcessor
 /processorParam:ColorKeyColor=255,0,255,255
@@ -191,7 +179,7 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:assets/images/tree.png
+/build:assets/images/topTree.png
 
 #begin assets/images/woodAxe.png
 /importer:TextureImporter
