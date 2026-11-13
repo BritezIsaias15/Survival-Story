@@ -36,7 +36,9 @@ namespace Survival_Story
         private GraphicsDeviceManager _graphics;
         private SpriteBatch _spriteBatch;
 
-        private Texture2D _player, _rock, _topTree, _bottomTree, _sand, _map, _woodPicaxe, _woodAxe, _woodShovel, _inventory, _menu, _select_play, _select_exit, _select_controls, _controls, _rockDrop, _sandDrop;
+        private Texture2D _player, _rock, _topTree, _bottomTree, _sand, _map, _woodPicaxe, _woodAxe, _woodShovel, _inventory, _menu, _select_play, _select_exit, _select_controls, _controls, _rockDrop, _sandDrop, _mapNight;
+        private float tiempoDia = 0f;
+        private float velocidadTiempo = 0.5f;
         private Camera2D _camera;
         private Random _random;
 
@@ -219,6 +221,7 @@ namespace Survival_Story
             _select_play = Content.Load<Texture2D>("assets/images/play");
             _select_exit = Content.Load<Texture2D>("assets/images/quit");
             _controls = Content.Load<Texture2D>("assets/images/controls");
+            _mapNight = Content.Load<Texture2D>("assets/images/mapEffect");
 
             playerRectangle = new Rectangle[8, 3];
             int playerWidth = 32;
@@ -241,7 +244,7 @@ namespace Survival_Story
 
             bool singleClick = _curMS.LeftButton == ButtonState.Pressed && _oldMS.LeftButton == ButtonState.Released;
 
-            _camera.Follow(new Vector2(500, 300), GraphicsDevice.Viewport);
+            _camera.Follow(Vector2.Zero , GraphicsDevice.Viewport);
             if (_curKS.IsKeyDown(Keys.Escape) && _oldKS.IsKeyUp(Keys.Escape))
             {
                 if (menuOpen == true)
@@ -311,7 +314,8 @@ namespace Survival_Story
                 interact();
                 collision(gameTime);
                 actualizarHerramienta();
-                _camera.Follow(playerPosition, GraphicsDevice.Viewport);
+                _camera.Follow(new Vector2(playerPosition.X + playerWidth / 2, playerPosition.Y + playerHeight / 2), GraphicsDevice.Viewport);
+                tiempoDia = (float)(Math.Sin(gameTime.TotalGameTime.TotalSeconds * velocidadTiempo) + 1.0) / 2.0f;
             }
             base.Update(gameTime);
         }
@@ -333,9 +337,9 @@ namespace Survival_Story
 
         protected override void Draw(GameTime gameTime)
         {
-
             GraphicsDevice.Clear(Color.CornflowerBlue);
-            _spriteBatch.Begin(SpriteSortMode.FrontToBack, BlendState.AlphaBlend, SamplerState.PointClamp, transformMatrix: _camera.Transform);
+
+            _spriteBatch.Begin(SpriteSortMode.FrontToBack, BlendState.AlphaBlend, samplerState: SamplerState.PointClamp, transformMatrix: _camera.Transform);
 
             _spriteBatch.Draw(_map, mapPosition, null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.0f);
 
@@ -366,6 +370,17 @@ namespace Survival_Story
                 _spriteBatch.Draw(_woodShovel, toolPosition, null, Color.White, 0.0f, Vector2.Zero, 0.3f, SpriteEffects.None, 0.299f);
             }
 
+            _spriteBatch.End();
+
+            _spriteBatch.Begin(SpriteSortMode.FrontToBack, BlendState.AlphaBlend, samplerState: SamplerState.PointClamp);
+
+            Color colorDia = Color.Transparent;
+            Color colorNoche = new Color(10, 15, 45) * 0.75f;
+            Color tinteActual = Color.Lerp(colorDia, colorNoche, tiempoDia);
+
+            Rectangle pantallaCompleta = new Rectangle(0, 0, GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height);
+            _spriteBatch.Draw(_mapNight, mapPosition, null, Color.White * tiempoDia, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.01f);
+
             if (_openInventory == true)
             {
                 _spriteBatch.Draw(_inventory, new Vector2(100, 110), null, Color.White, 0.0f, Vector2.Zero, 7.0f, SpriteEffects.None, 0.8f);
@@ -373,31 +388,31 @@ namespace Survival_Story
 
             if (menuOpen == true)
             {
-                _spriteBatch.Draw(_menu, new Vector2(100, 60), null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.9f);
-    
+                _spriteBatch.Draw(_menu, new Vector2(0, 0), null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.9f);
+
                 if (selectPlay == true)
                 {
-                    _spriteBatch.Draw(_select_play, new Vector2(137, 150), null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.95f);
+                    _spriteBatch.Draw(_select_play, new Vector2(37, 90), null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.95f);
                 }
                 if (selectControls == true)
                 {
-                    _spriteBatch.Draw(_select_controls, new Vector2(191, 252), null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.95f);
+                    _spriteBatch.Draw(_select_controls, new Vector2(91, 192), null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.95f);
                 }
                 if (selectExit == true)
                 {
-                    _spriteBatch.Draw(_select_exit, new Vector2(245, 354), null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.95f);
-                }  
+                    _spriteBatch.Draw(_select_exit, new Vector2(145, 294), null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.95f);
+                }
                 if (controlsOpen == true)
                 {
-                    _spriteBatch.Draw(_controls, new Vector2(100, 60), null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.96f);
+                    _spriteBatch.Draw(_controls, new Vector2(0, 0), null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.96f);
                     if (selectExitControls)
                     {
-                        _spriteBatch.Draw(_select_exit, new Vector2(445, 408), null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.99f);
+                        _spriteBatch.Draw(_select_exit, new Vector2(345, 348), null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.99f);
                     }
                 }
             }
-
             _spriteBatch.End();
+
             base.Draw(gameTime);
         }
 

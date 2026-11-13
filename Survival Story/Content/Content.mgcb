@@ -23,7 +23,7 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:assets/images/bottomTree.png
+/build:assets/images/bottomTree.png;assets/images/bottomTree
 
 #begin assets/images/controlButtons.png
 /importer:TextureImporter
@@ -35,7 +35,7 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:assets/images/controlButtons.png
+/build:assets/images/controlButtons.png;assets/images/controlButtons
 
 #begin assets/images/controls.png
 /importer:TextureImporter
@@ -47,7 +47,7 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:assets/images/controls.png
+/build:assets/images/controls.png;assets/images/controls
 
 #begin assets/images/inventory.png
 /importer:TextureImporter
@@ -59,7 +59,7 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:assets/images/inventory.png
+/build:assets/images/inventory.png;assets/images/inventory
 
 #begin assets/images/map.png
 /importer:TextureImporter
@@ -71,7 +71,19 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:assets/images/map.png
+/build:assets/images/map.png;assets/images/map
+
+#begin assets/images/mapEffect.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:assets/images/mapEffect.png;assets/images/mapNight.png
 
 #begin assets/images/menu.png
 /importer:TextureImporter
@@ -83,7 +95,7 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:assets/images/menu.png
+/build:assets/images/menu.png;assets/images/menu
 
 #begin assets/images/play.png
 /importer:TextureImporter
@@ -95,7 +107,7 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:assets/images/play.png
+/build:assets/images/play.png;assets/images/play
 
 #begin assets/images/playerSheet.png
 /importer:TextureImporter
@@ -107,7 +119,7 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:assets/images/playerSheet.png
+/build:assets/images/playerSheet.png;assets/images/playerSheet
 
 #begin assets/images/quit.png
 /importer:TextureImporter
@@ -119,7 +131,7 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:assets/images/quit.png
+/build:assets/images/quit.png;assets/images/quit
 
 #begin assets/images/rock.png
 /importer:TextureImporter
@@ -131,7 +143,7 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:assets/images/rock.png
+/build:assets/images/rock.png;assets/images/rock
 
 #begin assets/images/rockDrop.png
 /importer:TextureImporter
@@ -143,7 +155,7 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:assets/images/rockDrop.png
+/build:assets/images/rockDrop.png;assets/images/rockDrop
 
 #begin assets/images/sand.png
 /importer:TextureImporter
@@ -155,7 +167,7 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:assets/images/sand.png
+/build:assets/images/sand.png;assets/images/sand
 
 #begin assets/images/sandDrop.png
 /importer:TextureImporter
@@ -167,7 +179,7 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:assets/images/sandDrop.png
+/build:assets/images/sandDrop.png;assets/images/sandDrop
 
 #begin assets/images/topTree.png
 /importer:TextureImporter
@@ -179,7 +191,7 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:assets/images/topTree.png
+/build:assets/images/topTree.png;assets/images/topTree
 
 #begin assets/images/woodAxe.png
 /importer:TextureImporter
@@ -191,7 +203,7 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:assets/images/woodAxe.png
+/build:assets/images/woodAxe.png;assets/images/woodAxe
 
 #begin assets/images/woodPicaxe.png
 /importer:TextureImporter
@@ -203,7 +215,7 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:assets/images/woodPicaxe.png
+/build:assets/images/woodPicaxe.png;assets/images/woodPicaxe
 
 #begin assets/images/woodShovel.png
 /importer:TextureImporter
@@ -215,5 +227,5 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:assets/images/woodShovel.png
+/build:assets/images/woodShovel.png;assets/images/woodShovel
 
