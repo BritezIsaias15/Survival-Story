@@ -50,8 +50,8 @@ namespace Survival_Story
 
         private float velocidadGlobal = 250.0f;
 
-        private int playerWidth = 32 * 2;
-        private int playerHeight = 32 * 2;
+        private int playerWidth = 64;
+        private int playerHeight =  64;
         private int toolIndicate;
 
         private float playerTimer;
@@ -97,7 +97,7 @@ namespace Survival_Story
             Rectangle mountainZone3 = new Rectangle(Epos(24), Epos(9), Epos(4), Epos(4));
             Rectangle mountainZone4 = new Rectangle(Epos(23), Epos(22), Epos(4), Epos(4));
 
-            playerPosition = new Vector2(500, 300);
+            playerPosition = pos(10, 10);
             menuOpen = true;
             
             _camera = new Camera2D(GraphicsDevice);    
@@ -241,8 +241,7 @@ namespace Survival_Story
 
             bool singleClick = _curMS.LeftButton == ButtonState.Pressed && _oldMS.LeftButton == ButtonState.Released;
 
-            _camera.Follow(playerPosition, GraphicsDevice.Viewport);
-
+            _camera.Follow(new Vector2(500, 300), GraphicsDevice.Viewport);
             if (_curKS.IsKeyDown(Keys.Escape) && _oldKS.IsKeyUp(Keys.Escape))
             {
                 if (menuOpen == true)
@@ -252,7 +251,6 @@ namespace Survival_Story
                 else
                 {
                     menuOpen = true;
-                    playerPosition = new Vector2(500, 300);
                 }
             }
 
@@ -313,6 +311,7 @@ namespace Survival_Story
                 interact();
                 collision(gameTime);
                 actualizarHerramienta();
+                _camera.Follow(playerPosition, GraphicsDevice.Viewport);
             }
             base.Update(gameTime);
         }
