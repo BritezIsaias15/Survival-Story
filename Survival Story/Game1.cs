@@ -4,6 +4,7 @@ using Microsoft.Xna.Framework.Input;
 using Entradas;
 using System;
 using System.Linq;
+using System.Diagnostics;
 
 public class Camera2D
 {
@@ -37,8 +38,11 @@ namespace Survival_Story
         private SpriteBatch _spriteBatch;
 
         private Texture2D _player, _rock, _topTree, _bottomTree, _sand, _map, _woodPicaxe, _woodAxe, _woodShovel, _inventory, _menu, _select_play, _select_exit, _select_controls, _controls, _rockDrop, _sandDrop, _mapNight;
-        private float tiempoDia = 0f;
-        private float velocidadTiempo = 0.5f;
+        private SpriteFont _font;
+        private float dayTimer = 0f;
+        private float dayDuration = 5.0f;
+        private int currentDay = 0;
+        private bool isNight = false;
         private Camera2D _camera;
         private Random _random;
 
@@ -221,7 +225,8 @@ namespace Survival_Story
             _select_play = Content.Load<Texture2D>("assets/images/play");
             _select_exit = Content.Load<Texture2D>("assets/images/quit");
             _controls = Content.Load<Texture2D>("assets/images/controls");
-            _mapNight = Content.Load<Texture2D>("assets/images/mapEffect");
+            _mapNight = Content.Load<Texture2D>("assets/images/mapNight");
+            _font = Content.Load<SpriteFont>("assets/fonts/font");
 
             playerRectangle = new Rectangle[8, 3];
             int playerWidth = 32;
@@ -311,11 +316,19 @@ namespace Survival_Story
             {
                 inventory();
                 movementPlayer(gameTime);
-                interact();
                 collision(gameTime);
+                interact();
                 actualizarHerramienta();
+
                 _camera.Follow(new Vector2(playerPosition.X + playerWidth / 2, playerPosition.Y + playerHeight / 2), GraphicsDevice.Viewport);
-                tiempoDia = (float)(Math.Sin(gameTime.TotalGameTime.TotalSeconds * velocidadTiempo) + 1.0) / 2.0f;
+                float deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
+                dayTimer += deltaTime;
+                if (dayTimer >= dayDuration)
+                {
+                    dayTimer = 0f;
+                    currentDay++;
+                }
+                isNight = dayTimer >= (dayDuration/ 2f);
             }
             base.Update(gameTime);
         }
@@ -374,12 +387,14 @@ namespace Survival_Story
 
             _spriteBatch.Begin(SpriteSortMode.FrontToBack, BlendState.AlphaBlend, samplerState: SamplerState.PointClamp);
 
-            Color colorDia = Color.Transparent;
-            Color colorNoche = new Color(10, 15, 45) * 0.75f;
-            Color tinteActual = Color.Lerp(colorDia, colorNoche, tiempoDia);
+            Color colorDay = Color.Transparent;
+            Color colorNight = new Color(10, 15, 45) * 0.75f;
+            float dayProgress = dayTimer / dayDuration;
+            float nightIntensity = (MathF.Sin(dayProgress * MathF.PI * 2f - MathF.PI / 2f) + 1f) / 2f;
+            Color actualTime = Color.Lerp(colorDay, colorNight, nightIntensity);
 
-            Rectangle pantallaCompleta = new Rectangle(0, 0, GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height);
-            _spriteBatch.Draw(_mapNight, mapPosition, null, Color.White * tiempoDia, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.01f);
+            Rectangle fullScreen = new Rectangle(0, 0, GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height);
+            _spriteBatch.Draw(_mapNight, fullScreen, null, actualTime, 0.0f, Vector2.Zero, SpriteEffects.None, 0.01f);
 
             if (_openInventory == true)
             {
@@ -388,29 +403,36 @@ namespace Survival_Story
 
             if (menuOpen == true)
             {
-                _spriteBatch.Draw(_menu, new Vector2(0, 0), null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.9f);
+                _spriteBatch.Draw(_menu, new Vector2(0, 0), null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.99f);
 
                 if (selectPlay == true)
                 {
-                    _spriteBatch.Draw(_select_play, new Vector2(37, 90), null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.95f);
+                    _spriteBatch.Draw(_select_play, new Vector2(37, 90), null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.99f);
                 }
                 if (selectControls == true)
                 {
-                    _spriteBatch.Draw(_select_controls, new Vector2(91, 192), null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.95f);
+                    _spriteBatch.Draw(_select_controls, new Vector2(91, 192), null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.99f);
                 }
                 if (selectExit == true)
                 {
-                    _spriteBatch.Draw(_select_exit, new Vector2(145, 294), null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.95f);
+                    _spriteBatch.Draw(_select_exit, new Vector2(145, 294), null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.99f);
                 }
                 if (controlsOpen == true)
                 {
-                    _spriteBatch.Draw(_controls, new Vector2(0, 0), null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.96f);
+                    _spriteBatch.Draw(_controls, new Vector2(0, 0), null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.99f);
                     if (selectExitControls)
                     {
                         _spriteBatch.Draw(_select_exit, new Vector2(345, 348), null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.99f);
                     }
                 }
             }
+
+            string dayText = $"Dia: {currentDay}";
+            Vector2 textSize = _font.MeasureString(dayText);
+            float textX = GraphicsDevice.Viewport.Width - textSize.X - 20f;
+            float textY = 20f;  
+            _spriteBatch.DrawString(_font, dayText, new Vector2(textX, textY), Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.8f);
+
             _spriteBatch.End();
 
             base.Draw(gameTime);

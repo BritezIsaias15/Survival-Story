@@ -13,6 +13,13 @@
 
 #---------------------------------- Content ---------------------------------#
 
+#begin assets/fonts/font.spritefont
+/importer:FontDescriptionImporter
+/processor:FontDescriptionProcessor
+/processorParam:PremultiplyAlpha=True
+/processorParam:TextureFormat=Compressed
+/build:assets/fonts/font.spritefont
+
 #begin assets/images/bottomTree.png
 /importer:TextureImporter
 /processor:TextureProcessor
@@ -73,7 +80,7 @@
 /processorParam:TextureFormat=Color
 /build:assets/images/map.png;assets/images/map
 
-#begin assets/images/mapEffect.png
+#begin assets/images/mapNight.png
 /importer:TextureImporter
 /processor:TextureProcessor
 /processorParam:ColorKeyColor=255,0,255,255
@@ -83,7 +90,7 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:assets/images/mapEffect.png;assets/images/mapNight.png
+/build:assets/images/mapNight.png
 
 #begin assets/images/menu.png
 /importer:TextureImporter
