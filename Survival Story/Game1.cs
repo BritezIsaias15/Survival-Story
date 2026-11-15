@@ -59,6 +59,8 @@ namespace Survival_Story
         private int playerWidth = 64;
         private int playerHeight =  64;
         private int toolIndicate;
+        private int[] inventoryStorage = new int[10];
+        private Rectangle[] inventorySlot = new Rectangle[10];
 
         private float playerTimer;
         private int threshold;
@@ -102,6 +104,14 @@ namespace Survival_Story
             Rectangle mountainZone2 = new Rectangle(Epos(15), Epos(17), Epos(4), Epos(4));
             Rectangle mountainZone3 = new Rectangle(Epos(24), Epos(9), Epos(4), Epos(4));
             Rectangle mountainZone4 = new Rectangle(Epos(23), Epos(22), Epos(4), Epos(4));
+
+            for(int i = 0; i < inventoryStorage.Length; i++)
+            {
+                inventoryStorage[i] = 0;
+            }
+            inventoryStorage[0] = 2;
+            inventoryStorage[1] = 1;
+            inventoryStorage[2] = 3;
 
             playerPosition = pos(10, 10);
             menuOpen = true;
@@ -238,6 +248,17 @@ namespace Survival_Story
                     playerRectangle[i, j] = new Rectangle(j * playerWidth, i * playerHeight, playerWidth, playerHeight);
                 }
             }
+            
+            inventorySlot[0] = new Rectangle(128, 138, 70, 70);
+            inventorySlot[1] = new Rectangle(247, 138, 70, 70);
+            inventorySlot[2] = new Rectangle(366, 138, 70, 70);
+            inventorySlot[3] = new Rectangle(485, 138, 70, 70);
+            inventorySlot[4] = new Rectangle(597, 138, 70, 70);
+            inventorySlot[5] = new Rectangle(128, 250, 70, 70);
+            inventorySlot[6] = new Rectangle(247, 250, 70, 70);
+            inventorySlot[7] = new Rectangle(366, 250, 70, 70);
+            inventorySlot[8] = new Rectangle(485, 250, 70, 70);
+            inventorySlot[9] = new Rectangle(597, 250, 70, 70);
         }
 
         protected override void Update(GameTime gameTime)
@@ -398,7 +419,23 @@ namespace Survival_Story
 
             if (_openInventory == true)
             {
-                _spriteBatch.Draw(_inventory, new Vector2(100, 110), null, Color.White, 0.0f, Vector2.Zero, 7.0f, SpriteEffects.None, 0.8f);
+                _spriteBatch.Draw(_inventory, new Vector2((GraphicsDevice.Viewport.Width / 2) - _inventory.Width / 2 * 7, (GraphicsDevice.Viewport.Height / 2) - _inventory.Height / 2 * 7), null, Color.White, 0.0f, Vector2.Zero, 7.0f, SpriteEffects.None, 0.8f); //588x238 
+
+                for(int i = 0; i < inventoryStorage.Length; i++)
+                {
+                    if(inventoryStorage[i] == 1)
+                    {
+                        _spriteBatch.Draw(_topTree, inventorySlot[i], null, Color.White, 0.0f, Vector2.Zero, SpriteEffects.None, 0.9f);
+                    }
+                    if(inventoryStorage[i] == 2)
+                    {
+                        _spriteBatch.Draw(_rockDrop, inventorySlot[i], null, Color.White, 0.0f, Vector2.Zero, SpriteEffects.None, 0.9f);
+                    }
+                    if(inventoryStorage[i] == 3)
+                    {
+                        _spriteBatch.Draw(_sandDrop, inventorySlot[i], null, Color.White, 0.0f, Vector2.Zero, SpriteEffects.None, 0.9f);
+                    }
+                }
             }
 
             if (menuOpen == true)
