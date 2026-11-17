@@ -44,6 +44,13 @@ namespace Survival_Story
         private float dayDuration = 5.0f;
         private int currentDay = 0;
         private bool isNight = false;
+        private float playerHealth = 100f;
+        private float playerHunger = 100f;
+        private float playerEnergy = 100f;
+        private float playerMoral = 100f;
+        private float hungerDecayRate = 0.25f;
+        private float energyDecayRate = 0.20f;
+        private float healthRegenRate = 2.0f;
         private Camera2D _camera;
         private Random _random;
 
@@ -143,6 +150,7 @@ namespace Survival_Story
             inventoryStorage[0] = 2;
             inventoryStorage[1] = 1;
             inventoryStorage[2] = 3;
+            
 
             playerPosition = pos(10, 10);
             ovejaPosition = pos(10, 10);
@@ -296,6 +304,33 @@ namespace Survival_Story
             inventorySlot[8] = new Rectangle(485, 250, 70, 70);
             inventorySlot[9] = new Rectangle(597, 250, 70, 70);
         }
+
+        void playerStats(GameTime gameTime)
+        {
+            float deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
+
+            playerHunger -= hungerDecayRate * deltaTime;
+            playerEnergy -= energyDecayRate * deltaTime;
+
+            playerHunger = MathHelper.Clamp(playerHunger, 0f, 100f);
+            playerEnergy = MathHelper.Clamp(playerEnergy, 0f, 100f);
+
+            if (playerHunger <= 0f)
+            {
+                playerHealth -= 5f * deltaTime;
+            }
+
+            if (isNight)
+            {
+                playerMoral -= 0.1f * deltaTime;
+                playerMoral = MathHelper.Clamp(playerMoral, 0f, 100f);
+            }
+
+            if (playerHealth <= 0f)
+            {
+                playerHealth = 0f;
+            }
+        }
         protected override void Update(GameTime gameTime)
         {
             _oldKS = _curKS;
@@ -374,6 +409,7 @@ namespace Survival_Story
                 actualizarHerramienta();
                 AnimalLogic(gameTime);
                 ToroLogic(gameTime);
+                playerStats(gameTime);
                 _camera.Follow(new Vector2(playerPosition.X + playerWidth / 2, playerPosition.Y + playerHeight / 2), GraphicsDevice.Viewport);
                 float deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
                 dayTimer += deltaTime;
@@ -407,6 +443,7 @@ namespace Survival_Story
             _spriteBatch.Draw(_map, mapPosition, null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.0f);
             drawResource(_rock, _rockDrop, rockPosition, rockActive);
             drawResource(_sand, _sandDrop, sandPosition, sandActive);
+            
             for (int i = 0; i < treePosition.Length; i++)
             {
                 if (treeActive[i] == true)
@@ -484,6 +521,8 @@ namespace Survival_Story
             {
                 _spriteBatch.Draw(_woodShovel, toolPosition, null, Color.White, 0.0f, Vector2.Zero, 0.3f, SpriteEffects.None, 0.299f);
             }
+
+            
             _spriteBatch.End();
             _spriteBatch.Begin(SpriteSortMode.FrontToBack, BlendState.AlphaBlend, samplerState: SamplerState.PointClamp);
             Color colorDay = Color.Transparent;
@@ -536,6 +575,9 @@ namespace Survival_Story
                     }
                 }
             }
+            string statsText = $"Salud: {(int)playerHealth} | Hambre: {(int)playerHunger} | Energia: {(int)playerEnergy} | Moral: {(int)playerMoral}";
+            _spriteBatch.DrawString(_font, statsText, new Vector2(20, 20), Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.8f );
+
             string dayText = $"Dia: {currentDay}";
             Vector2 textSize = _font.MeasureString(dayText);
             float textX = GraphicsDevice.Viewport.Width - textSize.X - 20f;
