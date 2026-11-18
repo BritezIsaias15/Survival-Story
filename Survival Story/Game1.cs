@@ -40,6 +40,9 @@ namespace Survival_Story
         private Texture2D _player, _rock, _topTree, _bottomTree, _sand, _map, _woodPicaxe, _woodAxe, _woodShovel, _inventory, _menu, _select_play, _select_exit, _select_controls, _controls, _rockDrop, _sandDrop, _mapNight, _oveja, _toro, _pixel, _casa;
         private bool casaColocada = false;
         private SpriteFont _font;
+        private string _userName = string.Empty;
+        private bool _nameFieldActive;
+        private readonly Rectangle _nameInputBounds = new Rectangle(37, 410, 288, 44);
         private float dayTimer = 0f;
         private float dayDuration = 5.0f;
         private int currentDay = 0;
@@ -118,6 +121,26 @@ namespace Survival_Story
             _graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
             IsMouseVisible = true;
+            Window.TextInput += OnTextInput;
+        }
+
+        private void OnTextInput(object sender, TextInputEventArgs e)
+        {
+            if (!menuOpen || controlsOpen || !_nameFieldActive || _userName.Length >= 16)
+            {
+                return;
+            }
+
+            char character = e.Character;
+            bool isAsciiLetterOrDigit =
+                (character >= 'A' && character <= 'Z') ||
+                (character >= 'a' && character <= 'z') ||
+                (character >= '0' && character <= '9');
+
+            if (isAsciiLetterOrDigit || (character == ' ' && _userName.Length > 0 && !_userName.EndsWith(" ")))
+            {
+                _userName += character;
+            }
         }
 
         private Vector2 pos(int posX, int posY)
@@ -149,7 +172,7 @@ namespace Survival_Story
             inventoryStorage[0] = 2;
             inventoryStorage[1] = 1;
             inventoryStorage[2] = 3;
-            
+
 
             playerPosition = pos(10, 10);
             ovejaPosition = pos(10, 10);
@@ -304,7 +327,7 @@ namespace Survival_Story
             inventorySlot[9] = new Rectangle(597, 250, 70, 70);
         }
 
-        
+
         void playerStats(GameTime gameTime)
         {
             float deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
@@ -331,7 +354,7 @@ namespace Survival_Story
             float deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
             dayTimer += deltaTime;
             if (dayTimer >= dayDuration)
-             {
+            {
                 dayTimer = 0f;
                 currentDay++;
             }
@@ -364,34 +387,37 @@ namespace Survival_Story
             Rectangle buttonExitControls = new Rectangle(345, 348, 288, 96);
             if (menuOpen)
             {
+                selectPlay = false;
+                selectControls = false;
+                selectExit = false;
+                selectExitControls = false;
+
                 if (!controlsOpen)
                 {
+                    if (singleClick)
+                    {
+                        _nameFieldActive = _nameInputBounds.Contains(_curMS.Position);
+                    }
+
+                    if (_nameFieldActive && _curKS.IsKeyDown(Keys.Back) && _oldKS.IsKeyUp(Keys.Back) && _userName.Length > 0)
+                    {
+                        _userName = _userName.Substring(0, _userName.Length - 1);
+                    }
+
                     if (buttonPlay.Contains(_curMS.Position))
                     {
                         selectPlay = true;
                         if (singleClick) menuOpen = false;
-                    }
-                    else
-                    {
-                        selectPlay = false;
                     }
                     if (buttonControls.Contains(_curMS.Position))
                     {
                         selectControls = true;
                         if (singleClick) controlsOpen = true;
                     }
-                    else
-                    {
-                        selectControls = false;
-                    }
                     if (buttonExit.Contains(_curMS.Position))
                     {
                         selectExit = true;
                         if (singleClick) Exit();
-                    }
-                    else
-                    {
-                        selectExit = false;
                     }
                 }
                 else if (controlsOpen)
@@ -400,10 +426,6 @@ namespace Survival_Story
                     {
                         selectExitControls = true;
                         if (singleClick) controlsOpen = false;
-                    }
-                    else
-                    {
-                        selectExitControls = false;
                     }
                 }
             }
@@ -444,7 +466,7 @@ namespace Survival_Story
             _spriteBatch.Draw(_map, mapPosition, null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.0f);
             drawResource(_rock, _rockDrop, rockPosition, rockActive);
             drawResource(_sand, _sandDrop, sandPosition, sandActive);
-            
+
             for (int i = 0; i < treePosition.Length; i++)
             {
                 if (treeActive[i] == true)
@@ -523,7 +545,7 @@ namespace Survival_Story
                 _spriteBatch.Draw(_woodShovel, toolPosition, null, Color.White, 0.0f, Vector2.Zero, 0.3f, SpriteEffects.None, 0.299f);
             }
 
-            
+
             _spriteBatch.End();
             _spriteBatch.Begin(SpriteSortMode.FrontToBack, BlendState.AlphaBlend, samplerState: SamplerState.PointClamp);
             Color colorDay = Color.Transparent;
@@ -554,7 +576,16 @@ namespace Survival_Story
             }
             if (menuOpen == true)
             {
-                _spriteBatch.Draw(_menu, new Vector2(0, 0), null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.99f);
+                _spriteBatch.Draw(_menu, new Vector2(0, 0), null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.98f);
+                if (!controlsOpen)
+                {
+                    Color nameFieldBorder = _nameFieldActive ? Color.Cyan : Color.LightGray;
+                    _spriteBatch.DrawString(_font, "Nombre de usuario", new Vector2(37, 392), Color.White, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0.995f);
+                    _spriteBatch.Draw(_pixel, _nameInputBounds, null, nameFieldBorder, 0f, Vector2.Zero, SpriteEffects.None, 0.996f);
+                    _spriteBatch.Draw(_pixel, new Rectangle(_nameInputBounds.X + 2, _nameInputBounds.Y + 2, _nameInputBounds.Width - 4, _nameInputBounds.Height - 4), null, new Color(25, 28, 52), 0f, Vector2.Zero, SpriteEffects.None, 0.997f);
+                    string nameText = _userName.Length == 0 ? "Haz clic para escribir..." : _userName;
+                    _spriteBatch.DrawString(_font, nameText, new Vector2(_nameInputBounds.X + 10, _nameInputBounds.Y + 13), Color.White, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0.998f);
+                }
                 if (selectPlay == true)
                 {
                     _spriteBatch.Draw(_select_play, new Vector2(37, 90), null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.99f);
@@ -572,12 +603,12 @@ namespace Survival_Story
                     _spriteBatch.Draw(_controls, new Vector2(0, 0), null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.99f);
                     if (selectExitControls)
                     {
-                        _spriteBatch.Draw(_select_exit, new Vector2(345, 348), null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.99f);
+                        _spriteBatch.Draw(_select_exit, new Vector2(345, 348), null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.995f);
                     }
                 }
             }
             string statsText = $"Salud: {(int)playerHealth} | Hambre: {(int)playerHunger} | Energia: {(int)playerEnergy} | Moral: {playerMoral}";
-            _spriteBatch.DrawString(_font, statsText, new Vector2(20, 20), Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.8f );
+            _spriteBatch.DrawString(_font, statsText, new Vector2(20, 20), Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.8f);
 
             string dayText = $"Dia: {currentDay}";
             Vector2 textSize = _font.MeasureString(dayText);
@@ -612,29 +643,29 @@ namespace Survival_Story
             }
             animation(gameTime);
         }
-            private void CheckCollisions(ref Vector2 playerPosition, ref Rectangle playerHitbox, Vector2[] objPosition, bool[] objActive, Texture2D obj, float movement, bool movementX)
-             {
-                for (int i = 0; i < objPosition.Length; i++)
+        private void CheckCollisions(ref Vector2 playerPosition, ref Rectangle playerHitbox, Vector2[] objPosition, bool[] objActive, Texture2D obj, float movement, bool movementX)
+        {
+            for (int i = 0; i < objPosition.Length; i++)
+            {
+                if (!objActive[i]) continue;
+                Rectangle objHitbox = new Rectangle((int)objPosition[i].X, (int)objPosition[i].Y, obj.Width, obj.Height);
+                if (playerHitbox.Intersects(objHitbox))
                 {
-                    if (!objActive[i]) continue;
-                    Rectangle objHitbox = new Rectangle((int)objPosition[i].X, (int)objPosition[i].Y, obj.Width, obj.Height);
-                    if (playerHitbox.Intersects(objHitbox))
+                    if (movementX)
                     {
-                        if (movementX)
-                        {
-                            if (movement > 0) playerPosition.X = objHitbox.Left - playerWidth;
-                            else if (movement < 0) playerPosition.X = objHitbox.Right;
-                            playerHitbox.X = (int)playerPosition.X;
-                        }
-                        else
-                        {
-                            if (movement > 0) playerPosition.Y = objHitbox.Top - playerHeight;
-                            else if (movement < 0) playerPosition.Y = objHitbox.Bottom;
-                            playerHitbox.Y = (int)playerPosition.Y;
-                        }
+                        if (movement > 0) playerPosition.X = objHitbox.Left - playerWidth;
+                        else if (movement < 0) playerPosition.X = objHitbox.Right;
+                        playerHitbox.X = (int)playerPosition.X;
+                    }
+                    else
+                    {
+                        if (movement > 0) playerPosition.Y = objHitbox.Top - playerHeight;
+                        else if (movement < 0) playerPosition.Y = objHitbox.Bottom;
+                        playerHitbox.Y = (int)playerPosition.Y;
                     }
                 }
             }
+        }
         private void collision(GameTime gameTime)
         {
             float delta = (float)gameTime.ElapsedGameTime.TotalSeconds;
@@ -1187,7 +1218,7 @@ namespace Survival_Story
                 playerTimer -= threshold;
             }
         }
-private void actualizarHerramienta()
+        private void actualizarHerramienta()
         {
             switch (playerDirection)
             {
