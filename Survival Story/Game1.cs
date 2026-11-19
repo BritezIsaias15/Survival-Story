@@ -115,6 +115,7 @@ namespace Survival_Story
         private bool _openInventory = false;
         private MouseState _curMS, _oldMS;
         private KeyboardState _curKS, _oldKS;
+        private int playerId;
 
         public Game1()
         {
@@ -377,8 +378,8 @@ namespace Survival_Story
                 }
                 else
                 {
+                    ConnectDB.RegistrarSesion(1, 1, currentDay, dayTimer);
                     menuOpen = true;
-                    ConnectDB.RegistrarJugador(1, "javier");
                 }
             }
             Rectangle buttonPlay = new Rectangle(37, 90, 288, 96);
@@ -407,7 +408,11 @@ namespace Survival_Story
                     if (buttonPlay.Contains(_curMS.Position))
                     {
                         selectPlay = true;
-                        if (singleClick) menuOpen = false;
+                        if (singleClick && _userName != "") 
+                        {
+                            menuOpen = false;
+                            ConnectDB.RegistrarJugador(1, _userName);
+                        };
                     }
                     if (buttonControls.Contains(_curMS.Position))
                     {
