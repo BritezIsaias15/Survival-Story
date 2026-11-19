@@ -116,6 +116,7 @@ namespace Survival_Story
         private MouseState _curMS, _oldMS;
         private KeyboardState _curKS, _oldKS;
         private int playerId;
+        private int sessionId;
 
         public Game1()
         {
@@ -378,7 +379,7 @@ namespace Survival_Story
                 }
                 else
                 {
-                    ConnectDB.RegistrarSesion(1, 1, currentDay, dayTimer);
+                    ConnectDB.GuardarSesion(_userName, currentDay, dayTimer);
                     menuOpen = true;
                 }
             }
@@ -410,8 +411,15 @@ namespace Survival_Story
                         selectPlay = true;
                         if (singleClick && _userName != "") 
                         {
+                            var sesion = ConnectDB.CargarSesion(_userName);
+                            if (sesion.encontrada)
+                            {
+                                currentDay = sesion.survivedDays;
+                                dayTimer = sesion.timeDay;
+                            }
+                            ConnectDB.RegistrarJugador(_userName);
                             menuOpen = false;
-                            ConnectDB.RegistrarJugador(1, _userName);
+                            
                         };
                     }
                     if (buttonControls.Contains(_curMS.Position))

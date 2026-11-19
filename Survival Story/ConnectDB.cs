@@ -15,88 +15,134 @@ namespace Entradas //Código sin uso, modificar y copiar para las distintas tabl
         // NUEVO MÉTODO: Registra al jugador antes de guardar la partida
 
         //Inserts
-        public static void RegistrarJugador(int id, string name)
+        public static int RegistrarJugador(string playerName)
         {
-            string query = "INSERT INTO player (id, name)" +
-                           "VALUES (@playerId, @playerName)";
+            string selectSql = "SELECT id FROM player WHERE name = @name LIMIT 1;";
+            string insertSql = "INSERT INTO player (name) VALUES (@name); SELECT LAST_INSERT_ID();";
+
+            using (MySqlConnection conexion = new MySqlConnection(stringConexion))
+            {
+                conexion.Open();
+
+                using (MySqlCommand select = new MySqlCommand(selectSql, conexion))
+                {
+                    select.Parameters.AddWithValue("@name", playerName);
+                    object resultado = select.ExecuteScalar();
+
+                    if (resultado != null && resultado != DBNull.Value)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Sobrescribiendo el jugador {playerName}...");
+                        return Convert.ToInt32(resultado);
+                    }
+                }
+
+                // Si no existe, creamos el jugador y recuperamos su nuevo id
+                using (MySqlCommand insert = new MySqlCommand(insertSql, conexion))
+                {
+                    System.Diagnostics.Debug.WriteLine($"Creando el {playerName}...");
+                    insert.Parameters.AddWithValue("@name", playerName);
+                    object newId = insert.ExecuteScalar();
+                    return Convert.ToInt32(newId);
+                }
+            }
+        }
+        public static void GuardarSesion(string playerName, int sessionDay, float sessionTime)
+        {
+            try
+            {
+                int playerId = RegistrarJugador(playerName);
+                GuardarSesionPorId(playerId, sessionDay, sessionTime);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine("Error al guardar sesión por nombre: " + ex.Message);
+            }
+        }
+
+        public static void GuardarSesionPorId(int playerId, int sessionDay, float sessionTime)
+        {
+            string query = @"
+                INSERT INTO session (id_player, survived_days, time_day)
+                VALUES (@playerId, @sessionDay, @sessionTime)
+                ON DUPLICATE KEY UPDATE
+                    survived_days = VALUES(survived_days),
+                    time_day = VALUES(time_day);";
+
             try
             {
                 using (MySqlConnection conexion = new MySqlConnection(stringConexion))
                 {
                     conexion.Open();
-                    using (MySqlCommand comando = new MySqlCommand(query, conexion))
+                    using (MySqlCommand cmd = new MySqlCommand(query, conexion))
                     {
-                        comando.Parameters.AddWithValue("@playerId", id);
-                        comando.Parameters.AddWithValue("@playerName", name);
+                        cmd.Parameters.AddWithValue("@playerId", playerId);
+                        cmd.Parameters.AddWithValue("@sessionDay", sessionDay);
+                        cmd.Parameters.AddWithValue("@sessionTime", sessionTime);
 
-                        comando.ExecuteNonQuery();
-                        System.Diagnostics.Debug.WriteLine($"Se ha registrado el jugador {name}");
+                        cmd.ExecuteNonQuery();
+                        System.Diagnostics.Debug.WriteLine($"Sesión sobrescrita/guardada para playerId={playerId} (días: {sessionDay}, tiempo: {sessionTime}).");
                     }
                 }
             }
             catch (MySqlException ex)
             {
-                // Si el ID ya existe, MySQL dará error de llave primaria duplicada (código 1062)
-                if (ex.Number == 1062)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Ya existe un jugador {name}. Continuamos...");
-                }
-                else
-                {
-                    System.Diagnostics.Debug.WriteLine("Error al registrar jugador: " + ex.Message);
-                }
-                
+                System.Diagnostics.Debug.WriteLine("Error en base de datos al guardar sesión por ID: " + ex.Message);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine("Error al guardar sesión por ID: " + ex.Message);
             }
         }
 
-        public static void RegistrarSesion(int id, int playerId, int daysSurvived, float timeDay)
+        public static (bool encontrada, int survivedDays, float timeDay) CargarSesion(string playerName)
         {
-            string query = "INSERT INTO session (id, id_player, survived_days, time_day)" +
-                           "VALUES (@sessionId, @playerId, @sessionDays, @sessionTime)";
+            string cleanName = playerName?.Trim() ?? string.Empty;
+            if (string.IsNullOrEmpty(cleanName))
+                return (false, 1, 0f);
+
+            string query = @"
+                SELECT s.survived_days, s.time_day
+                FROM session s
+                INNER JOIN player p ON p.id = s.id_player
+                WHERE p.name = @name
+                LIMIT 1;";
+
             try
             {
                 using (MySqlConnection conexion = new MySqlConnection(stringConexion))
                 {
                     conexion.Open();
-                    using (MySqlCommand comando = new MySqlCommand(query, conexion))
+                    using (MySqlCommand cmd = new MySqlCommand(query, conexion))
                     {
-                        comando.Parameters.AddWithValue("@sessionId", id);
-                        comando.Parameters.AddWithValue("@playerId", playerId);
-                        comando.Parameters.AddWithValue("@sessionDays", daysSurvived);
-                        comando.Parameters.AddWithValue("@sessionTime", timeDay);
-
-                        comando.ExecuteNonQuery();
-                        System.Diagnostics.Debug.WriteLine($"Se ha registrado la sesión.");
-                    }
-                }
-            }
-            catch (MySqlException)
-            {
-                string queryUpdate = "UPDATE session " +
-                                     "SET survived_days = @sessionDays AND time_day = @sessionTime " +
-                                     "WHERE id = 1 ";
-                try
-                {
-                    using (MySqlConnection conexion = new MySqlConnection(stringConexion))
-                    {
-                        conexion.Open();
-                        using (MySqlCommand comando = new MySqlCommand(queryUpdate, conexion))
+                        cmd.Parameters.AddWithValue("@name", cleanName);
+                        using (MySqlDataReader reader = cmd.ExecuteReader())
                         {
-                            comando.Parameters.AddWithValue("@sessionDays", daysSurvived);
-                            comando.Parameters.AddWithValue("@sessionTime", timeDay);
+                            if (reader.Read())
+                            {
+                                int days = reader.IsDBNull(reader.GetOrdinal("survived_days"))
+                                    ? 1
+                                    : reader.GetInt32("survived_days");
 
-                            comando.ExecuteNonQuery();
-                            System.Diagnostics.Debug.WriteLine($"Se ha actualizado la sesión.");
+                                float time = reader.IsDBNull(reader.GetOrdinal("time_day"))
+                                    ? 0f
+                                    : reader.GetFloat("time_day");
+
+                                return (true, days, time);
+                            }
                         }
                     }
                 }
-                catch (MySqlException ex)
-                {
-                    System.Diagnostics.Debug.WriteLine("Error al guardar la sesión: " + ex.Message);
-                }
             }
+            catch (MySqlException ex)
+            {
+                System.Diagnostics.Debug.WriteLine("Error al cargar sesión: " + ex.Message);
+            }
+
+            return (false, 1, 0f);
         }
+
         
+        /*
         public static void InsertarPlayerStateLog(int idSession, int health, int energy, int hunger, string moral)
         {
             string query = "INSERT INTO playerStateLog (id_session, health, energy, hunger, moral) " +
@@ -424,4 +470,5 @@ public static (string nombre, int cantidad) AsignarVariablesRecurso(int id)
     string nombre = recurso.nombre;
     int cantidad = recurso.cantidad;
      */
+    }
 }
