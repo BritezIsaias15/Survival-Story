@@ -51,7 +51,7 @@ namespace Entradas //Código sin uso, modificar y copiar para las distintas tabl
             try
             {
                 int playerId = RegistrarJugador(playerName);
-                GuardarSesionPorId(playerId, sessionDay, sessionTime);
+                GuardarSesionPorId(playerId, playerId, sessionDay, sessionTime);
             }
             catch (Exception ex)
             {
@@ -59,11 +59,11 @@ namespace Entradas //Código sin uso, modificar y copiar para las distintas tabl
             }
         }
 
-        public static void GuardarSesionPorId(int playerId, int sessionDay, float sessionTime)
+        public static void GuardarSesionPorId(int sessionId, int playerId, int sessionDay, float sessionTime)
         {
             string query = @"
-                INSERT INTO session (id_player, survived_days, time_day)
-                VALUES (@playerId, @sessionDay, @sessionTime)
+                INSERT INTO session (id, id_player, survived_days, time_day)
+                VALUES (@sessionId, @playerId, @sessionDay, @sessionTime)
                 ON DUPLICATE KEY UPDATE
                     survived_days = VALUES(survived_days),
                     time_day = VALUES(time_day);";
@@ -75,6 +75,7 @@ namespace Entradas //Código sin uso, modificar y copiar para las distintas tabl
                     conexion.Open();
                     using (MySqlCommand cmd = new MySqlCommand(query, conexion))
                     {
+                        cmd.Parameters.AddWithValue("@sessionId", sessionId);
                         cmd.Parameters.AddWithValue("@playerId", playerId);
                         cmd.Parameters.AddWithValue("@sessionDay", sessionDay);
                         cmd.Parameters.AddWithValue("@sessionTime", sessionTime);
