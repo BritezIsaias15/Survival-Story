@@ -13,49 +13,68 @@ namespace Entradas //Código sin uso, modificar y copiar para las distintas tabl
         private static string stringConexion = "Server=localhost;Port=3306;Database=survival;User=root;Pwd=;";
 
         // NUEVO MÉTODO: Registra al jugador antes de guardar la partida
-
-        //Inserts
-        public static int RegistrarJugador(string playerName)
+        
+        public struct playerData
         {
-            string selectSql = "SELECT id FROM player WHERE name = @name LIMIT 1;";
-            string insertSql = "INSERT INTO player (name) VALUES (@name); SELECT LAST_INSERT_ID();";
+            public int id { get; set; }
+            public string name { get; set; }
+            public int axisX { get; set;}
+            public int axisY { get; set; }
+        }
+        public struct sessionData
+        {
+            public int id { get; set; }
+            public int playerId { get; set; }
+            public int survivedDays { get; set; }
+            public float timeDay { get; set; }
+        }
+
+        
+        public static bool tablaVacia(string nombreTabla)
+        {
+            string query = $"SELECT COUNT(*) FROM {nombreTabla};";
 
             using (MySqlConnection conexion = new MySqlConnection(stringConexion))
             {
                 conexion.Open();
-
-                using (MySqlCommand select = new MySqlCommand(selectSql, conexion))
+                using (MySqlCommand cmd = new MySqlCommand(query, conexion))
                 {
-                    select.Parameters.AddWithValue("@name", playerName);
-                    object resultado = select.ExecuteScalar();
-
-                    if (resultado != null && resultado != DBNull.Value)
-                    {
-                        System.Diagnostics.Debug.WriteLine($"Sobrescribiendo el jugador {playerName}...");
-                        return Convert.ToInt32(resultado);
-                    }
-                }
-
-                // Si no existe, creamos el jugador y recuperamos su nuevo id
-                using (MySqlCommand insert = new MySqlCommand(insertSql, conexion))
-                {
-                    System.Diagnostics.Debug.WriteLine($"Creando el {playerName}...");
-                    insert.Parameters.AddWithValue("@name", playerName);
-                    object newId = insert.ExecuteScalar();
-                    return Convert.ToInt32(newId);
+                    long totalFilas = Convert.ToInt64(cmd.ExecuteScalar());
+                    return totalFilas == 0;
                 }
             }
         }
-        public static void GuardarSesion(string playerName, int sessionDay, float sessionTime)
+
+        public static void GuardarJugador(playerData player)
         {
+            string query = @"
+                INSERT INTO player (name, axisX, axisY) 
+                VALUES (@name, @axisX, @axisY) 
+                ON DUPLICATE KEY UPDATE 
+                    axisX = VALUES(axisX), 
+                    axisY = VALUES(axisY)";
+
             try
             {
-                int playerId = RegistrarJugador(playerName);
-                GuardarSesionPorId(playerId, playerId, sessionDay, sessionTime);
+                using (MySqlConnection conexion = new MySqlConnection(stringConexion))
+                {
+                    conexion.Open();
+
+                    using (MySqlCommand cmd = new MySqlCommand(query, conexion))
+                    {
+
+                        cmd.Parameters.AddWithValue("@name", player.name);
+                        cmd.Parameters.AddWithValue("@axisX", player.axisX);
+                        cmd.Parameters.AddWithValue("@axisY", player.axisY);
+
+                        cmd.ExecuteNonQuery();
+                        System.Diagnostics.Debug.WriteLine($"Se ha creado/modificado el perfil {player.name}");
+                    }
+                }
             }
-            catch (Exception ex)
+            catch (MySqlException ex)
             {
-                System.Diagnostics.Debug.WriteLine("Error al guardar sesión por nombre: " + ex.Message);
+                System.Diagnostics.Debug.WriteLine($"Error MySQL ({ex.Number}): {ex.Message}");
             }
         }
 

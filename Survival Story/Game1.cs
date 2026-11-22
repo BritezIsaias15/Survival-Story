@@ -8,6 +8,7 @@ using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System.Collections.Generic;
+using System.Configuration;
 
 public class Camera2D
 {
@@ -48,7 +49,6 @@ namespace Survival_Story
         private Texture2D _player, _rock, _topTree, _bottomTree, _sand, _map, _woodPicaxe, _woodAxe, _woodShovel, _inventory, _menu, _select_play, _select_exit, _select_controls, _controls, _rockDrop, _sandDrop, _treeDrop, _mapNight, _pantmuerte, _oveja, _toro, _pixel, _casa, _registroacciones;
         private bool casaColocada = false;
         private SpriteFont _font;
-        private string _userName = string.Empty;
         private bool _nameFieldActive;
         private readonly Rectangle _nameInputBounds = new Rectangle(37, 410, 288, 44);
         private float dayTimer = 0f;
@@ -95,7 +95,9 @@ namespace Survival_Story
         private int toroDireccionAcercarse = -1;
         private int toroMovimientosAcercarse = 0;
 
-        private Vector2 movement, playerPosition, toolPosition, mapPosition;
+        private Vector2 movement, toolPosition;
+        private Vector2 mapPosition = new Vector2(0,0);
+        private Vector2 playerPosition = new Vector2(710, 710);
         private Vector2[] rockPosition, treePosition, sandPosition;
 
         private bool menuOpen, controlsOpen, selectPlay, selectExit, selectExitControls, selectControls, isDead;
@@ -122,10 +124,9 @@ namespace Survival_Story
         private bool _openInventory = false;
         private MouseState _curMS, _oldMS;
         private KeyboardState _curKS, _oldKS;
-        private int playerId;
-        private int sessionId;
         private Stack<string> historialAcciones = new Stack<string>();
         private string ultimaAccion = "Ninguna accion";
+        private string playerName = string.Empty;
 
         public Game1()
         {
@@ -137,7 +138,7 @@ namespace Survival_Story
 
         private void OnTextInput(object sender, TextInputEventArgs e)
         {
-            if (!menuOpen || controlsOpen || !_nameFieldActive || _userName.Length >= 16)
+            if (!menuOpen || controlsOpen || !_nameFieldActive || playerName.Length >= 16)
             {
                 return;
             }
@@ -148,9 +149,9 @@ namespace Survival_Story
                 (character >= 'a' && character <= 'z') ||
                 (character >= '0' && character <= '9');
 
-            if (isAsciiLetterOrDigit || (character == ' ' && _userName.Length > 0 && !_userName.EndsWith(" ")))
+            if (isAsciiLetterOrDigit || (character == ' ' && playerName.Length > 0 && !playerName.EndsWith(" ")))
             {
-                _userName += character;
+                playerName += character;
             }
         }
 
@@ -170,6 +171,7 @@ namespace Survival_Story
 
         protected override void Initialize()
         {
+
             Rectangle grassZone = new Rectangle(Epos(9), Epos(7), Epos(22), Epos(22));
             Rectangle mountainZone1 = new Rectangle(Epos(11), Epos(10), Epos(4), Epos(4));
             Rectangle mountainZone2 = new Rectangle(Epos(15), Epos(17), Epos(4), Epos(4));
@@ -181,7 +183,6 @@ namespace Survival_Story
                 inventoryStorage[i] = 0;
             }
 
-            playerPosition = pos(10, 10);
             ovejaPosition = pos(12, 12);
             toroPosition = pos(20, 20);
             menuOpen = true;
@@ -276,7 +277,6 @@ namespace Survival_Story
                 sandPosition[i] = positionTry;
                 sandState[i] = 1;
             }
-            mapPosition = new Vector2(0, 0);
             playerTimer = 0;
             threshold = 250;
             base.Initialize();
@@ -288,7 +288,7 @@ namespace Survival_Story
             _pixel.SetData(new[] { Color.White });
             _player = Content.Load<Texture2D>("assets/images/playerSheet");
             _rock = Content.Load<Texture2D>("assets/images/rock");
-            _rockDrop = Content.Load<Texture2D>("assets/images/RockDrop");
+            _rockDrop = Content.Load<Texture2D>("assets/images/rockDrop");
             _sand = Content.Load<Texture2D>("assets/images/sand");
             _sandDrop = Content.Load<Texture2D>("assets/images/sandDrop");
             _topTree = Content.Load<Texture2D>("assets/images/topTree");
@@ -364,6 +364,19 @@ namespace Survival_Story
                 playerHealth -= 5f * deltaTime;
             }
         }
+
+        private void GuardarPerfilJugador()
+        {
+            ConnectDB.playerData perfil = new ConnectDB.playerData
+            {
+                name = playerName,
+                axisX = (int)playerPosition.X,
+                axisY = (int)playerPosition.Y
+            };
+
+            ConnectDB.GuardarJugador(perfil);
+        }
+
         protected override void Update(GameTime gameTime)
         {
             _oldKS = _curKS;
@@ -379,6 +392,7 @@ namespace Survival_Story
                 }
                 else
                 {
+                    GuardarPerfilJugador();
                     menuOpen = true;
                 }
             }
@@ -399,16 +413,16 @@ namespace Survival_Story
                     {
                         _nameFieldActive = _nameInputBounds.Contains(_curMS.Position);
                     }
-                    if (_nameFieldActive && _curKS.IsKeyDown(Keys.Back) && _oldKS.IsKeyUp(Keys.Back) && _userName.Length > 0)
+                    if (_nameFieldActive && _curKS.IsKeyDown(Keys.Back) && _oldKS.IsKeyUp(Keys.Back) && playerName.Length > 0)
                     {
-                        _userName = _userName.Substring(0, _userName.Length - 1);
+                        playerName = playerName.Substring(0, playerName.Length - 1);
                     }
                     if (buttonPlay.Contains(_curMS.Position))
                     {
                         selectPlay = true;
-                        if (singleClick && _userName != "")
+                        if (singleClick && playerName != "")
                         {
-                            var sesion = ConnectDB.CargarSesion(_userName);
+                            var sesion = ConnectDB.CargarSesion(playerName);
                             if (sesion.encontrada)
                             {
                                 currentDay = sesion.survivedDays;
@@ -669,7 +683,7 @@ namespace Survival_Story
                     _spriteBatch.DrawString(_font, "Nombre de usuario", new Vector2(37, 392), Color.White, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0.995f);
                     _spriteBatch.Draw(_pixel, _nameInputBounds, null, nameFieldBorder, 0f, Vector2.Zero, SpriteEffects.None, 0.996f);
                     _spriteBatch.Draw(_pixel, new Rectangle(_nameInputBounds.X + 2, _nameInputBounds.Y + 2, _nameInputBounds.Width - 4, _nameInputBounds.Height - 4), null, new Color(25, 28, 52), 0f, Vector2.Zero, SpriteEffects.None, 0.997f);
-                    string nameText = _userName.Length == 0 ? "Haz clic para escribir..." : _userName;
+                    string nameText = playerName.Length == 0 ? "Haz clic para escribir..." : playerName;
                     _spriteBatch.DrawString(_font, nameText, new Vector2(_nameInputBounds.X + 10, _nameInputBounds.Y + 13), Color.White, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0.998f);
                 }
                 if (selectPlay)
