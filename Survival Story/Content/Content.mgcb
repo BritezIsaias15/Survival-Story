@@ -32,7 +32,7 @@
 /processorParam:TextureFormat=Compressed
 /build:assets/fonts/font.spritefont
 
-#begin assets/images/alchilenose.png
+#begin assets/images/sandDrop.png
 /importer:TextureImporter
 /processor:TextureProcessor
 /processorParam:ColorKeyColor=255,0,255,255
@@ -42,7 +42,7 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:assets/images/alchilenose.png;assets/images/sandDrop.png
+/build:assets/images/sandDrop.png;assets/images/sandDrop.png
 
 #begin assets/images/bottomTree.png
 /importer:TextureImporter
