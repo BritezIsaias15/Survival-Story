@@ -290,7 +290,7 @@ namespace Survival_Story
             _rock = Content.Load<Texture2D>("assets/images/rock");
             _rockDrop = Content.Load<Texture2D>("assets/images/RockDrop");
             _sand = Content.Load<Texture2D>("assets/images/sand");
-            _sandDrop = Content.Load<Texture2D>("assets/images/alchilenose");
+            _sandDrop = Content.Load<Texture2D>("assets/images/sandDrop");
             _topTree = Content.Load<Texture2D>("assets/images/topTree");
             _bottomTree = Content.Load<Texture2D>("assets/images/bottomTree");
             _treeDrop = Content.Load<Texture2D>("assets/images/treeDrop");
