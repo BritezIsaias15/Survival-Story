@@ -126,6 +126,7 @@ namespace Survival_Story
         private KeyboardState _curKS, _oldKS;
         private Stack<string> historialAcciones = new Stack<string>();
         private string ultimaAccion = "Ninguna accion";
+        private int playerId;
         private string playerName = string.Empty;
 
         public Game1()
@@ -169,9 +170,50 @@ namespace Survival_Story
             return pos;
         }
 
+        private void CargarPartida(string nombreJugador)
+        {
+            if (string.IsNullOrWhiteSpace(nombreJugador))
+            {
+                return;
+            }
+
+            string nombreLimpio = nombreJugador.Trim();
+            playerName = nombreLimpio;
+
+            ConnectDB.playerData? jugadorGuardado = ConnectDB.CargarJugador(nombreLimpio);
+
+            if (jugadorGuardado.HasValue)
+            {
+                playerPosition = new Vector2(jugadorGuardado.Value.axisX, jugadorGuardado.Value.axisY);
+
+                ConnectDB.sessionData? sesionGuardada = ConnectDB.CargarSesion(jugadorGuardado.Value.id);
+
+                if (sesionGuardada.HasValue)
+                {
+                    currentDay = sesionGuardada.Value.survived_days;
+                    dayTimer = sesionGuardada.Value.time_day;
+                }
+                else
+                {
+                    currentDay = 1;
+                    dayTimer = 0f;
+                }
+
+                System.Diagnostics.Debug.WriteLine(
+                    $"Partida cargada."
+                );
+            }
+            else
+            {
+                playerPosition = new Vector2(710, 710);
+                currentDay = 1;
+                dayTimer = 0f;
+
+            }
+        }
+
         protected override void Initialize()
         {
-
             Rectangle grassZone = new Rectangle(Epos(9), Epos(7), Epos(22), Epos(22));
             Rectangle mountainZone1 = new Rectangle(Epos(11), Epos(10), Epos(4), Epos(4));
             Rectangle mountainZone2 = new Rectangle(Epos(15), Epos(17), Epos(4), Epos(4));
@@ -365,16 +407,33 @@ namespace Survival_Story
             }
         }
 
-        private void GuardarPerfilJugador()
+       private void GuardarPartida()
         {
+            if (string.IsNullOrWhiteSpace(playerName))
+                return;
+
             ConnectDB.playerData perfil = new ConnectDB.playerData
             {
-                name = playerName,
+                name = playerName.Trim(),
                 axisX = (int)playerPosition.X,
                 axisY = (int)playerPosition.Y
             };
+            ConnectDB.Jugador(perfil);
 
-            ConnectDB.GuardarJugador(perfil);
+            int idJugador = ConnectDB.ObtenerIdJugador(perfil.name);
+
+            if (idJugador <= 0)
+            {
+                return;
+            }
+
+            ConnectDB.sessionData sesion = new ConnectDB.sessionData
+            {
+                id_player = idJugador,
+                survived_days = currentDay,
+                time_day = dayTimer
+            };
+            ConnectDB.Sesion(sesion);
         }
 
         protected override void Update(GameTime gameTime)
@@ -392,7 +451,7 @@ namespace Survival_Story
                 }
                 else
                 {
-                    GuardarPerfilJugador();
+                    GuardarPartida();
                     menuOpen = true;
                 }
             }
@@ -422,12 +481,7 @@ namespace Survival_Story
                         selectPlay = true;
                         if (singleClick && playerName != "")
                         {
-                            var sesion = ConnectDB.CargarSesion(playerName);
-                            if (sesion.encontrada)
-                            {
-                                currentDay = sesion.survivedDays;
-                                dayTimer = sesion.timeDay;
-                            }
+                            CargarPartida(playerName);
                             menuOpen = false;
                         }
                     }

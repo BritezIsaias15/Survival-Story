@@ -24,9 +24,9 @@ namespace Entradas //Código sin uso, modificar y copiar para las distintas tabl
         public struct sessionData
         {
             public int id { get; set; }
-            public int playerId { get; set; }
-            public int survivedDays { get; set; }
-            public float timeDay { get; set; }
+            public int id_player { get; set; }
+            public int survived_days { get; set; }
+            public float time_day { get; set; }
         }
 
         
@@ -45,14 +45,16 @@ namespace Entradas //Código sin uso, modificar y copiar para las distintas tabl
             }
         }
 
-        public static void GuardarJugador(playerData player)
+        public static void Jugador(playerData player)
         {
-            string query = @"
-                INSERT INTO player (name, axisX, axisY) 
-                VALUES (@name, @axisX, @axisY) 
-                ON DUPLICATE KEY UPDATE 
-                    axisX = VALUES(axisX), 
-                    axisY = VALUES(axisY)";
+            string updateQuery = @"
+                UPDATE player
+                SET axisX = @axisX, axisY = @axisY
+                WHERE name = @name;";
+
+            string insertQuery = @"
+                INSERT INTO player (name, axisX, axisY)
+                VALUES (@name, @axisX, @axisY);";
 
             try
             {
@@ -60,94 +62,23 @@ namespace Entradas //Código sin uso, modificar y copiar para las distintas tabl
                 {
                     conexion.Open();
 
-                    using (MySqlCommand cmd = new MySqlCommand(query, conexion))
+                    using (MySqlCommand updateCmd = new MySqlCommand(updateQuery, conexion))
                     {
+                        updateCmd.Parameters.AddWithValue("@name", player.name);
+                        updateCmd.Parameters.AddWithValue("@axisX", player.axisX);
+                        updateCmd.Parameters.AddWithValue("@axisY", player.axisY);
 
-                        cmd.Parameters.AddWithValue("@name", player.name);
-                        cmd.Parameters.AddWithValue("@axisX", player.axisX);
-                        cmd.Parameters.AddWithValue("@axisY", player.axisY);
+                        int datos = updateCmd.ExecuteNonQuery();
 
-                        cmd.ExecuteNonQuery();
-                        System.Diagnostics.Debug.WriteLine($"Se ha creado/modificado el perfil {player.name}");
-                    }
-                }
-            }
-            catch (MySqlException ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error MySQL ({ex.Number}): {ex.Message}");
-            }
-        }
-
-        public static void GuardarSesionPorId(int sessionId, int playerId, int sessionDay, float sessionTime)
-        {
-            string query = @"
-                INSERT INTO session (id, id_player, survived_days, time_day)
-                VALUES (@sessionId, @playerId, @sessionDay, @sessionTime)
-                ON DUPLICATE KEY UPDATE
-                    survived_days = VALUES(survived_days),
-                    time_day = VALUES(time_day);";
-
-            try
-            {
-                using (MySqlConnection conexion = new MySqlConnection(stringConexion))
-                {
-                    conexion.Open();
-                    using (MySqlCommand cmd = new MySqlCommand(query, conexion))
-                    {
-                        cmd.Parameters.AddWithValue("@sessionId", sessionId);
-                        cmd.Parameters.AddWithValue("@playerId", playerId);
-                        cmd.Parameters.AddWithValue("@sessionDay", sessionDay);
-                        cmd.Parameters.AddWithValue("@sessionTime", sessionTime);
-
-                        cmd.ExecuteNonQuery();
-                        System.Diagnostics.Debug.WriteLine($"Sesión sobrescrita/guardada para playerId={playerId} (días: {sessionDay}, tiempo: {sessionTime}).");
-                    }
-                }
-            }
-            catch (MySqlException ex)
-            {
-                System.Diagnostics.Debug.WriteLine("Error en base de datos al guardar sesión por ID: " + ex.Message);
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine("Error al guardar sesión por ID: " + ex.Message);
-            }
-        }
-
-        public static (bool encontrada, int survivedDays, float timeDay) CargarSesion(string playerName)
-        {
-            string cleanName = playerName?.Trim() ?? string.Empty;
-            if (string.IsNullOrEmpty(cleanName))
-                return (false, 1, 0f);
-
-            string query = @"
-                SELECT s.survived_days, s.time_day
-                FROM session s
-                INNER JOIN player p ON p.id = s.id_player
-                WHERE p.name = @name
-                LIMIT 1;";
-
-            try
-            {
-                using (MySqlConnection conexion = new MySqlConnection(stringConexion))
-                {
-                    conexion.Open();
-                    using (MySqlCommand cmd = new MySqlCommand(query, conexion))
-                    {
-                        cmd.Parameters.AddWithValue("@name", cleanName);
-                        using (MySqlDataReader reader = cmd.ExecuteReader())
+                        // Si no existía el jugador, recién ahí lo insertamos
+                        if (datos == 0)
                         {
-                            if (reader.Read())
+                            using (MySqlCommand insertCmd = new MySqlCommand(insertQuery, conexion))
                             {
-                                int days = reader.IsDBNull(reader.GetOrdinal("survived_days"))
-                                    ? 1
-                                    : reader.GetInt32("survived_days");
-
-                                float time = reader.IsDBNull(reader.GetOrdinal("time_day"))
-                                    ? 0f
-                                    : reader.GetFloat("time_day");
-
-                                return (true, days, time);
+                                insertCmd.Parameters.AddWithValue("@name", player.name);
+                                insertCmd.Parameters.AddWithValue("@axisX", player.axisX);
+                                insertCmd.Parameters.AddWithValue("@axisY", player.axisY);
+                                insertCmd.ExecuteNonQuery();
                             }
                         }
                     }
@@ -155,13 +86,171 @@ namespace Entradas //Código sin uso, modificar y copiar para las distintas tabl
             }
             catch (MySqlException ex)
             {
-                System.Diagnostics.Debug.WriteLine("Error al cargar sesión: " + ex.Message);
+                System.Diagnostics.Debug.WriteLine($"Error MySQL en Jugador ({ex.Number}): {ex.Message}");
             }
-
-            return (false, 1, 0f);
         }
 
-        
+        public static int ObtenerIdJugador(string nombre)
+        {
+            string query = "SELECT id FROM player WHERE name = @name LIMIT 1;";
+
+            try
+            {
+                using (MySqlConnection conexion = new MySqlConnection(stringConexion))
+                {
+                    conexion.Open();
+                    using (MySqlCommand cmd = new MySqlCommand(query, conexion))
+                    {
+                        cmd.Parameters.AddWithValue("@name", nombre);
+                        object resultado = cmd.ExecuteScalar();
+
+                        if (resultado != null && resultado != DBNull.Value)
+                        {
+                            return Convert.ToInt32(resultado);
+                        }
+                    }
+                }
+            }
+            catch (MySqlException ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error MySQL al obtener id de jugador ({ex.Number}): {ex.Message}");
+            }
+
+            return 0;
+        }
+        public static void Sesion(sessionData session)
+        {
+            string updateQuery = @"
+                UPDATE session
+                SET survived_days = @sessionDay,
+                    time_day = @sessionTime
+                WHERE id_player = @idPlayer;";
+
+            string insertQuery = @"
+                INSERT INTO session (id_player, survived_days, time_day)
+                VALUES (@idPlayer, @sessionDay, @sessionTime);";
+
+            try
+            {
+                using (MySqlConnection conexion = new MySqlConnection(stringConexion))
+                {
+                    conexion.Open();
+
+                    using (MySqlCommand updateCmd = new MySqlCommand(updateQuery, conexion))
+                    {
+                        updateCmd.Parameters.AddWithValue("@idPlayer", session.id_player);
+                        updateCmd.Parameters.AddWithValue("@sessionDay", session.survived_days);
+                        updateCmd.Parameters.AddWithValue("@sessionTime", session.time_day);
+
+                        int datos = updateCmd.ExecuteNonQuery();
+
+                        if (datos == 0)
+                        {
+                            using (MySqlCommand insertCmd = new MySqlCommand(insertQuery, conexion))
+                            {
+                                insertCmd.Parameters.AddWithValue("@idPlayer", session.id_player);
+                                insertCmd.Parameters.AddWithValue("@sessionDay", session.survived_days);
+                                insertCmd.Parameters.AddWithValue("@sessionTime", session.time_day);
+
+                                insertCmd.ExecuteNonQuery();
+                                System.Diagnostics.Debug.WriteLine($"Nueva sesión creada para id_player={session.id_player}");
+                                return;
+                            }
+                        }
+
+                        System.Diagnostics.Debug.WriteLine($"Sesión actualizada para id_player={session.id_player}");
+                    }
+                }
+            }
+            catch (MySqlException ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error MySQL en Sesion ({ex.Number}): {ex.Message}");
+            }
+        }
+
+        public static playerData? CargarJugador(string nombre)
+        {
+            string query = @"
+                SELECT id, name, axisX, axisY
+                FROM player
+                WHERE name = @name
+                LIMIT 1;";
+
+            try
+            {
+                using (MySqlConnection conexion = new MySqlConnection(stringConexion))
+                {
+                    conexion.Open();
+
+                    using (MySqlCommand cmd = new MySqlCommand(query, conexion))
+                    {
+                        cmd.Parameters.AddWithValue("@name", nombre);
+
+                        using (MySqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            if (reader.Read())
+                            {
+                                return new playerData
+                                {
+                                    id = reader.GetInt32("id"),
+                                    name = reader.GetString("name"),
+                                    axisX = reader.GetInt32("axisX"),
+                                    axisY = reader.GetInt32("axisY")
+                                };
+                            }
+                        }
+                    }
+                }
+            }
+            catch (MySqlException ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error MySQL al cargar jugador ({ex.Number}): {ex.Message}");
+            }
+
+            return null;
+        }
+
+        public static sessionData? CargarSesion(int idPlayer)
+        {
+            string query = @"
+                SELECT id, id_player, survived_days, time_day
+                FROM session
+                WHERE id_player = @idPlayer
+                LIMIT 1;";
+
+            try
+            {
+                using (MySqlConnection conexion = new MySqlConnection(stringConexion))
+                {
+                    conexion.Open();
+
+                    using (MySqlCommand cmd = new MySqlCommand(query, conexion))
+                    {
+                        cmd.Parameters.AddWithValue("@idPlayer", idPlayer);
+
+                        using (MySqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            if (reader.Read())
+                            {
+                                return new sessionData
+                                {
+                                    id = reader.GetInt32("id"),
+                                    id_player = reader.GetInt32("id_player"),
+                                    survived_days = reader.GetInt32("survived_days"),
+                                    time_day = reader.GetFloat("time_day")
+                                };
+                            }
+                        }
+                    }
+                }
+            }
+            catch (MySqlException ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error MySQL al cargar sesión ({ex.Number}): {ex.Message}");
+            }
+
+            return null;
+        }        
         /*
         public static void InsertarPlayerStateLog(int idSession, int health, int energy, int hunger, string moral)
         {
