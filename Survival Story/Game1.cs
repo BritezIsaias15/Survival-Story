@@ -7,7 +7,10 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+<<<<<<< HEAD
 using System.Collections.Generic;
+=======
+>>>>>>> bf3833dd81f455fc9f52bd318b5b9f3a73d37dec
 
 public class Camera2D
 {
@@ -45,7 +48,11 @@ namespace Survival_Story
         private int treeCount = 0;
         private int sandCount = 0;
 
+<<<<<<< HEAD
         private Texture2D _player, _rock, _topTree, _bottomTree, _sand, _map, _woodPicaxe, _woodAxe, _woodShovel, _inventory, _menu, _select_play, _select_exit, _select_controls, _controls, _rockDrop, _sandDrop, _treeDrop, _mapNight, _pantmuerte, _oveja, _toro, _pixel, _casa, _registroacciones;
+=======
+        private Texture2D _player, _rock, _topTree, _bottomTree, _sand, _map, _woodPicaxe, _woodAxe, _woodShovel, _inventory, _menu, _select_play, _select_exit, _select_controls, _controls, _rockDrop, _sandDrop, _treeDrop, _mapNight, _pantmuerte, _oveja, _toro, _pixel, _casa;
+>>>>>>> bf3833dd81f455fc9f52bd318b5b9f3a73d37dec
         private bool casaColocada = false;
         private SpriteFont _font;
         private string _userName = string.Empty;
@@ -124,8 +131,11 @@ namespace Survival_Story
         private KeyboardState _curKS, _oldKS;
         private int playerId;
         private int sessionId;
+<<<<<<< HEAD
         private Stack<string> historialAcciones = new Stack<string>();
         private string ultimaAccion = "Ninguna accion";
+=======
+>>>>>>> bf3833dd81f455fc9f52bd318b5b9f3a73d37dec
 
         public Game1()
         {
@@ -310,7 +320,10 @@ namespace Survival_Story
             _font = Content.Load<SpriteFont>("assets/fonts/font");
             _casa = Content.Load<Texture2D>("assets/images/house");
             _pantmuerte = Content.Load<Texture2D>("assets/images/pantallamuerte");
+<<<<<<< HEAD
             _registroacciones = Content.Load<Texture2D>("assets/images/registro acciones");
+=======
+>>>>>>> bf3833dd81f455fc9f52bd318b5b9f3a73d37dec
             playerRectangle = new Rectangle[8, 3];
             int spriteWidth = 32;
             int spriteHeight = 32;
@@ -494,6 +507,7 @@ namespace Survival_Story
                         {
                             state[i] = 0;
                             count++;
+<<<<<<< HEAD
 
                             if (itemID == 1)
                                 RegistrarAccion("Recogio madera");
@@ -501,6 +515,8 @@ namespace Survival_Story
                                 RegistrarAccion("Recogio piedra");
                             else if (itemID == 3)
                                 RegistrarAccion("Recogio arena");
+=======
+>>>>>>> bf3833dd81f455fc9f52bd318b5b9f3a73d37dec
                         }
                     }
                 }
@@ -643,6 +659,7 @@ namespace Survival_Story
                     }
                 }
             }
+<<<<<<< HEAD
             _spriteBatch.DrawString(_font, "Ultima accion: " + ultimaAccion, new Vector2(20, 50), Color.White);
             if (_curKS.IsKeyDown(Keys.H))
             {
@@ -662,6 +679,10 @@ namespace Survival_Story
 
             if (menuOpen)
             {
+=======
+            if (menuOpen)
+            {
+>>>>>>> bf3833dd81f455fc9f52bd318b5b9f3a73d37dec
                 _spriteBatch.Draw(_menu, new Vector2(0, 0), null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.98f);
                 if (!controlsOpen)
                 {
@@ -1128,7 +1149,11 @@ namespace Survival_Story
                 toroMoviendo = true;
             }
         }
+<<<<<<< HEAD
         private bool checkResource(ref Vector2 playerCenter, Vector2[] objPosition, Texture2D obj, int[] objState)
+=======
+        private void checkResource(ref Vector2 playerCenter, Vector2[] objPosition, Texture2D obj, int[] objState)
+>>>>>>> bf3833dd81f455fc9f52bd318b5b9f3a73d37dec
         {
             for (int i = 0; i < objPosition.Length; i++)
             {
@@ -1139,7 +1164,11 @@ namespace Survival_Story
                     if (distance < 80.0f)
                     {
                         objState[i] = 2;
+<<<<<<< HEAD
                         return true;
+=======
+                        break;
+>>>>>>> bf3833dd81f455fc9f52bd318b5b9f3a73d37dec
                     }
                 }
             }
@@ -1210,6 +1239,7 @@ namespace Survival_Story
             {
                 if (toolEquipped[0])
                 {
+<<<<<<< HEAD
                     if (checkResource(ref playerCenter, rockPosition, _rock, rockState) == true)
                     {
                         RegistrarAccion("Pico piedra");
@@ -1228,6 +1258,17 @@ namespace Survival_Story
                     {
                         RegistrarAccion("Paleo arena");
                     }
+=======
+                    checkResource(ref playerCenter, rockPosition, _rock, rockState);
+                }
+                else if (toolEquipped[1])
+                {
+                    checkResource(ref playerCenter, treePosition, _bottomTree, treeState);
+                }
+                else if (toolEquipped[2])
+                {
+                    checkResource(ref playerCenter, sandPosition, _sand, sandState);
+>>>>>>> bf3833dd81f455fc9f52bd318b5b9f3a73d37dec
                 }
             }
         }
@@ -1248,11 +1289,14 @@ namespace Survival_Story
                 playerTimer -= threshold;
             }
         }
+<<<<<<< HEAD
         private void RegistrarAccion(string accion)
         {
             historialAcciones.Push(accion);
             ultimaAccion = accion;
         }
+=======
+>>>>>>> bf3833dd81f455fc9f52bd318b5b9f3a73d37dec
         private void actualizarHerramienta()
         {
             switch (playerDirection)
