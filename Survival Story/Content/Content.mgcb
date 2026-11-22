@@ -42,7 +42,7 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:assets/images/alchilenose.png
+/build:assets/images/alchilenose.png;assets/images/sandDrop.png
 
 #begin assets/images/bottomTree.png
 /importer:TextureImporter
@@ -247,18 +247,6 @@
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
 /build:assets/images/sand.png;assets/images/sand
-
-#begin assets/images/sandDrop.png
-/importer:TextureImporter
-/processor:TextureProcessor
-/processorParam:ColorKeyColor=255,0,255,255
-/processorParam:ColorKeyEnabled=True
-/processorParam:GenerateMipmaps=False
-/processorParam:PremultiplyAlpha=True
-/processorParam:ResizeToPowerOfTwo=False
-/processorParam:MakeSquare=False
-/processorParam:TextureFormat=Color
-/build:assets/images/sandDrop.png;assets/images/sandDrop
 
 #begin assets/images/topTree.png
 /importer:TextureImporter
