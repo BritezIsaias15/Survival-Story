@@ -13,13 +13,36 @@
 
 #---------------------------------- Content ---------------------------------#
 
+#begin ../../../RockDrop.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:../../../RockDrop.png;assets/images/RockDrop.png
+
 #begin assets/fonts/font.spritefont
 /importer:FontDescriptionImporter
 /processor:FontDescriptionProcessor
 /processorParam:PremultiplyAlpha=True
 /processorParam:TextureFormat=Compressed
-/processorParam:Version=3.8.6.0
 /build:assets/fonts/font.spritefont
+
+#begin assets/images/alchilenose.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:assets/images/alchilenose.png
 
 #begin assets/images/bottomTree.png
 /importer:TextureImporter
@@ -31,7 +54,6 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/processorParam:Version=3.8.6.0
 /build:assets/images/bottomTree.png;assets/images/bottomTree
 
 #begin assets/images/controlButtons.png
@@ -44,7 +66,6 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/processorParam:Version=3.8.6.0
 /build:assets/images/controlButtons.png;assets/images/controlButtons
 
 #begin assets/images/controls.png
@@ -57,7 +78,6 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/processorParam:Version=3.8.6.0
 /build:assets/images/controls.png;assets/images/controls
 
 #begin assets/images/house.png
@@ -70,7 +90,6 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/processorParam:Version=3.8.6.0
 /build:assets/images/house.png
 
 #begin assets/images/inventory.png
@@ -83,7 +102,6 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/processorParam:Version=3.8.6.0
 /build:assets/images/inventory.png;assets/images/inventory
 
 #begin assets/images/map.png
@@ -96,7 +114,6 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/processorParam:Version=3.8.6.0
 /build:assets/images/map.png;assets/images/map
 
 #begin assets/images/mapNight.png
@@ -109,7 +126,6 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/processorParam:Version=3.8.6.0
 /build:assets/images/mapNight.png
 
 #begin assets/images/menu.png
@@ -122,7 +138,6 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/processorParam:Version=3.8.6.0
 /build:assets/images/menu.png;assets/images/menu
 
 #begin assets/images/Oveja.png
@@ -135,8 +150,19 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/processorParam:Version=3.8.6.0
 /build:assets/images/Oveja.png
+
+#begin assets/images/pantallamuerte.jpg
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:assets/images/pantallamuerte.jpg
 
 #begin assets/images/play.png
 /importer:TextureImporter
@@ -148,7 +174,6 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/processorParam:Version=3.8.6.0
 /build:assets/images/play.png;assets/images/play
 
 #begin assets/images/playerSheet.png
@@ -161,7 +186,6 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/processorParam:Version=3.8.6.0
 /build:assets/images/playerSheet.png;assets/images/playerSheet
 
 #begin assets/images/quit.png
@@ -174,8 +198,19 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/processorParam:Version=3.8.6.0
 /build:assets/images/quit.png;assets/images/quit
+
+#begin assets/images/registro acciones.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:assets/images/registro acciones.png
 
 #begin assets/images/rock.png
 /importer:TextureImporter
@@ -187,10 +222,9 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/processorParam:Version=3.8.6.0
 /build:assets/images/rock.png;assets/images/rock
 
-#begin assets/images/rockDrop.png
+#begin assets/images/RockDrop.png
 /importer:TextureImporter
 /processor:TextureProcessor
 /processorParam:ColorKeyColor=255,0,255,255
@@ -200,8 +234,7 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/processorParam:Version=3.8.6.0
-/build:assets/images/rockDrop.png;assets/images/rockDrop
+/build:assets/images/RockDrop.png
 
 #begin assets/images/sand.png
 /importer:TextureImporter
@@ -213,7 +246,6 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/processorParam:Version=3.8.6.0
 /build:assets/images/sand.png;assets/images/sand
 
 #begin assets/images/sandDrop.png
@@ -226,7 +258,6 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/processorParam:Version=3.8.6.0
 /build:assets/images/sandDrop.png;assets/images/sandDrop
 
 #begin assets/images/topTree.png
@@ -239,7 +270,6 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/processorParam:Version=3.8.6.0
 /build:assets/images/topTree.png;assets/images/topTree
 
 #begin assets/images/toro.png
@@ -252,8 +282,19 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/processorParam:Version=3.8.6.0
 /build:assets/images/toro.png
+
+#begin assets/images/TreeDrop.jpg
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:assets/images/TreeDrop.jpg
 
 #begin assets/images/woodAxe.png
 /importer:TextureImporter
@@ -265,7 +306,6 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/processorParam:Version=3.8.6.0
 /build:assets/images/woodAxe.png;assets/images/woodAxe
 
 #begin assets/images/woodPicaxe.png
@@ -278,7 +318,6 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/processorParam:Version=3.8.6.0
 /build:assets/images/woodPicaxe.png;assets/images/woodPicaxe
 
 #begin assets/images/woodShovel.png
@@ -291,6 +330,5 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/processorParam:Version=3.8.6.0
 /build:assets/images/woodShovel.png;assets/images/woodShovel
 
