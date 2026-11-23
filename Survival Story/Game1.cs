@@ -8,6 +8,7 @@ using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System.Collections.Generic;
+using System.Configuration;
 
 public class Camera2D
 {
@@ -45,10 +46,9 @@ namespace Survival_Story
         private int treeCount = 0;
         private int sandCount = 0;
 
-        private Texture2D _player, _rock, _topTree, _bottomTree, _sand, _map, _woodPicaxe, _woodAxe, _woodShovel, _inventory, _menu, _select_play, _select_exit, _select_controls, _controls, _rockDrop, _sandDrop, _treeDrop, _mapNight, _pantmuerte, _oveja, _toro, _pixel, _casa, _registroacciones;
+        private Texture2D _player, _rock, _topTree, _bottomTree, _sand, _map, _woodPicaxe, _woodAxe, _woodShovel, _inventory, _menu, _select_play, _select_exit, _select_controls, _controls, _rockDrop, _sandDrop, _treeDrop, _mapNight, _pantmuerte, _oveja, _toro, _pixel, _casa, _registroacciones, _error;
         private bool casaColocada = false;
         private SpriteFont _font;
-        private string _userName = string.Empty;
         private bool _nameFieldActive;
         private readonly Rectangle _nameInputBounds = new Rectangle(37, 410, 288, 44);
         private float dayTimer = 0f;
@@ -95,7 +95,9 @@ namespace Survival_Story
         private int toroDireccionAcercarse = -1;
         private int toroMovimientosAcercarse = 0;
 
-        private Vector2 movement, playerPosition, toolPosition, mapPosition;
+        private Vector2 movement, toolPosition;
+        private Vector2 mapPosition = new Vector2(0, 0);
+        private Vector2 playerPosition = new Vector2(710, 710);
         private Vector2[] rockPosition, treePosition, sandPosition;
 
         private bool menuOpen, controlsOpen, selectPlay, selectExit, selectExitControls, selectControls, isDead;
@@ -122,10 +124,13 @@ namespace Survival_Story
         private bool _openInventory = false;
         private MouseState _curMS, _oldMS;
         private KeyboardState _curKS, _oldKS;
-        private int playerId;
-        private int sessionId;
         private Stack<string> historialAcciones = new Stack<string>();
         private string ultimaAccion = "Ninguna accion";
+        private int playerId;
+        private int sessionId;
+        private string playerName = string.Empty;
+        private List<string> mensajesError = new List<string>();
+        private float tiempoError = 0;
 
         public Game1()
         {
@@ -137,7 +142,7 @@ namespace Survival_Story
 
         private void OnTextInput(object sender, TextInputEventArgs e)
         {
-            if (!menuOpen || controlsOpen || !_nameFieldActive || _userName.Length >= 16)
+            if (!menuOpen || controlsOpen || !_nameFieldActive || playerName.Length >= 16)
             {
                 return;
             }
@@ -148,9 +153,9 @@ namespace Survival_Story
                 (character >= 'a' && character <= 'z') ||
                 (character >= '0' && character <= '9');
 
-            if (isAsciiLetterOrDigit || (character == ' ' && _userName.Length > 0 && !_userName.EndsWith(" ")))
+            if (isAsciiLetterOrDigit || (character == ' ' && playerName.Length > 0 && !playerName.EndsWith(" ")))
             {
-                _userName += character;
+                playerName += character;
             }
         }
 
@@ -168,6 +173,47 @@ namespace Survival_Story
             return pos;
         }
 
+        private void CargarPartida(string nombreJugador)
+        {
+            if (string.IsNullOrWhiteSpace(nombreJugador))
+            {
+                return;
+            }
+
+            string nombreLimpio = nombreJugador.Trim();
+            playerName = nombreLimpio;
+
+            ConnectDB.playerData? jugadorGuardado = ConnectDB.CargarJugador(nombreLimpio);
+
+            if (jugadorGuardado.HasValue)
+            {
+                playerPosition = new Vector2(jugadorGuardado.Value.axisX, jugadorGuardado.Value.axisY);
+
+                ConnectDB.sessionData? sesionGuardada = ConnectDB.CargarSesion(jugadorGuardado.Value.id);
+
+                if (sesionGuardada.HasValue)
+                {
+                    currentDay = sesionGuardada.Value.survived_days;
+                    dayTimer = sesionGuardada.Value.time_day;
+                }
+                else
+                {
+                    currentDay = 1;
+                    dayTimer = 0f;
+                }
+
+                System.Diagnostics.Debug.WriteLine(
+                    $"Partida cargada."
+                );
+            }
+            else
+            {
+                playerPosition = new Vector2(710, 710);
+                currentDay = 1;
+                dayTimer = 0f;
+            }
+        }
+
         protected override void Initialize()
         {
             Rectangle grassZone = new Rectangle(Epos(9), Epos(7), Epos(22), Epos(22));
@@ -181,7 +227,6 @@ namespace Survival_Story
                 inventoryStorage[i] = 0;
             }
 
-            playerPosition = pos(10, 10);
             ovejaPosition = pos(12, 12);
             toroPosition = pos(20, 20);
             menuOpen = true;
@@ -253,7 +298,6 @@ namespace Survival_Story
                 treePosition[i] = positionTry;
                 treeState[i] = 1;
             }
-
             for (int i = 0; i < cantSand; i++)
             {
                 int sandY, sandX;
@@ -276,7 +320,6 @@ namespace Survival_Story
                 sandPosition[i] = positionTry;
                 sandState[i] = 1;
             }
-            mapPosition = new Vector2(0, 0);
             playerTimer = 0;
             threshold = 250;
             base.Initialize();
@@ -311,6 +354,7 @@ namespace Survival_Story
             _casa = Content.Load<Texture2D>("assets/images/house");
             _pantmuerte = Content.Load<Texture2D>("assets/images/pantallamuerte");
             _registroacciones = Content.Load<Texture2D>("assets/images/registro acciones");
+            _error = Content.Load<Texture2D>("assets/images/Error");
             playerRectangle = new Rectangle[8, 3];
             int spriteWidth = 32;
             int spriteHeight = 32;
@@ -364,6 +408,30 @@ namespace Survival_Story
                 playerHealth -= 5f * deltaTime;
             }
         }
+        private void GuardarPartida()
+        {
+            if (string.IsNullOrWhiteSpace(playerName))
+                return;
+            ConnectDB.playerData perfil = new ConnectDB.playerData
+            {
+                name = playerName.Trim(),
+                axisX = (int)playerPosition.X,
+                axisY = (int)playerPosition.Y
+            };
+            ConnectDB.Jugador(perfil);
+            int idJugador = ConnectDB.ObtenerIdJugador(perfil.name);
+            if (idJugador <= 0)
+            {
+                return;
+            }
+            ConnectDB.sessionData sesion = new ConnectDB.sessionData
+            {
+                id_player = idJugador,
+                survived_days = currentDay,
+                time_day = dayTimer
+            };
+            ConnectDB.Sesion(sesion);
+        }
         protected override void Update(GameTime gameTime)
         {
             _oldKS = _curKS;
@@ -371,6 +439,8 @@ namespace Survival_Story
             _oldMS = _curMS;
             _curMS = Mouse.GetState();
             bool singleClick = _curMS.LeftButton == ButtonState.Pressed && _oldMS.LeftButton == ButtonState.Released;
+            if (tiempoError > 0)
+                tiempoError -= (float)gameTime.ElapsedGameTime.TotalSeconds;
             if (_curKS.IsKeyDown(Keys.Escape) && _oldKS.IsKeyUp(Keys.Escape))
             {
                 if (menuOpen)
@@ -379,6 +449,7 @@ namespace Survival_Story
                 }
                 else
                 {
+                    GuardarPartida();
                     menuOpen = true;
                 }
             }
@@ -399,21 +470,16 @@ namespace Survival_Story
                     {
                         _nameFieldActive = _nameInputBounds.Contains(_curMS.Position);
                     }
-                    if (_nameFieldActive && _curKS.IsKeyDown(Keys.Back) && _oldKS.IsKeyUp(Keys.Back) && _userName.Length > 0)
+                    if (_nameFieldActive && _curKS.IsKeyDown(Keys.Back) && _oldKS.IsKeyUp(Keys.Back) && playerName.Length > 0)
                     {
-                        _userName = _userName.Substring(0, _userName.Length - 1);
+                        playerName = playerName.Substring(0, playerName.Length - 1);
                     }
                     if (buttonPlay.Contains(_curMS.Position))
                     {
                         selectPlay = true;
-                        if (singleClick && _userName != "")
+                        if (singleClick && playerName != "")
                         {
-                            var sesion = ConnectDB.CargarSesion(_userName);
-                            if (sesion.encontrada)
-                            {
-                                currentDay = sesion.survivedDays;
-                                dayTimer = sesion.timeDay;
-                            }
+                            CargarPartida(playerName);
                             menuOpen = false;
                         }
                     }
@@ -479,6 +545,7 @@ namespace Survival_Story
                     return true;
                 }
             }
+            MostrarError("No tienes suficiente espacio");
             return false;
         }
         private void checkDropPickup(Rectangle playerHitbox, Vector2[] dropPos, Texture2D dropTex, int[] state, ref int count, int itemID)
@@ -488,13 +555,12 @@ namespace Survival_Story
                 if (state[i] == 2)
                 {
                     Rectangle dropHitbox = new Rectangle((int)dropPos[i].X, (int)dropPos[i].Y, dropTex.Width, dropTex.Height);
-                    if (playerHitbox.Intersects(dropHitbox) && _curKS.IsKeyDown(Keys.Q))
+                    if (playerHitbox.Intersects(dropHitbox) && _curKS.IsKeyDown(Keys.Q) && _oldKS.IsKeyUp(Keys.Q))
                     {
                         if (AgregarAlInventario(itemID))
                         {
                             state[i] = 0;
                             count++;
-
                             if (itemID == 1)
                                 RegistrarAccion("Recogio madera");
                             else if (itemID == 2)
@@ -646,20 +712,24 @@ namespace Survival_Story
             _spriteBatch.DrawString(_font, "Ultima accion: " + ultimaAccion, new Vector2(20, 50), Color.White);
             if (_curKS.IsKeyDown(Keys.H))
             {
+                int espacioR = 33;
                 _spriteBatch.Draw(_registroacciones, new Vector2(620, 60), null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.98f);
-                int espacio = 33;
-
                 foreach (string accion in historialAcciones)
                 {
-                    espacio += 32;
-
-                    if (espacio + 32 > 350)
+                    espacioR += 32;
+                    if (espacioR + 32 > 350)
                         break;
-
-                    _spriteBatch.DrawString(_font,accion,new Vector2(630, espacio ),Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.99f);
+                    _spriteBatch.DrawString(_font, accion, new Vector2(630, espacioR), Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.99f);
                 }
             }
-
+            if (tiempoError > 0)
+            {
+                _spriteBatch.Draw(_error, new Vector2(20, 300), null, Color.White, 0f, Vector2.Zero, 1.1f, SpriteEffects.None, 0.98f);
+                foreach (string mensaje in mensajesError)
+                {
+                    _spriteBatch.DrawString(_font, mensaje, new Vector2(80, 325), Color.Red, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0.99f);
+                }
+            }
             if (menuOpen)
             {
                 _spriteBatch.Draw(_menu, new Vector2(0, 0), null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.98f);
@@ -669,7 +739,7 @@ namespace Survival_Story
                     _spriteBatch.DrawString(_font, "Nombre de usuario", new Vector2(37, 392), Color.White, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0.995f);
                     _spriteBatch.Draw(_pixel, _nameInputBounds, null, nameFieldBorder, 0f, Vector2.Zero, SpriteEffects.None, 0.996f);
                     _spriteBatch.Draw(_pixel, new Rectangle(_nameInputBounds.X + 2, _nameInputBounds.Y + 2, _nameInputBounds.Width - 4, _nameInputBounds.Height - 4), null, new Color(25, 28, 52), 0f, Vector2.Zero, SpriteEffects.None, 0.997f);
-                    string nameText = _userName.Length == 0 ? "Haz clic para escribir..." : _userName;
+                    string nameText = playerName.Length == 0 ? "Haz clic para escribir..." : playerName;
                     _spriteBatch.DrawString(_font, nameText, new Vector2(_nameInputBounds.X + 10, _nameInputBounds.Y + 13), Color.White, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0.998f);
                 }
                 if (selectPlay)
@@ -1128,7 +1198,7 @@ namespace Survival_Story
                 toroMoviendo = true;
             }
         }
-        private bool checkResource(ref Vector2 playerCenter, Vector2[] objPosition, Texture2D obj, int[] objState)
+        private int checkResource(ref Vector2 playerCenter, Vector2[] objPosition, Texture2D obj, int[] objState, bool herramientaCorrecta)
         {
             for (int i = 0; i < objPosition.Length; i++)
             {
@@ -1138,12 +1208,15 @@ namespace Survival_Story
                     float distance = Vector2.Distance(playerCenter, objCenter);
                     if (distance < 80.0f)
                     {
-                        objState[i] = 2;
-                        return true;
+                        if (herramientaCorrecta)
+                        {
+                            objState[i] = 2;
+                        }
+                        return 1;
                     }
                 }
             }
-            return false;
+            return 0;
         }
         private void colocarCasa()
         {
@@ -1198,37 +1271,61 @@ namespace Survival_Story
         private void interact()
         {
             Vector2 playerCenter = new Vector2(playerPosition.X + (playerWidth / 2f), playerPosition.Y + (playerHeight / 2f));
-            if (_curKS.IsKeyDown(Keys.R) && toolIndicate != 0) {toolIndicate = 0; RegistrarAccion("Equipo pico");}
-            if (_curKS.IsKeyDown(Keys.T) && toolIndicate != 1) {toolIndicate = 1; RegistrarAccion("Equipo hacha");} 
-            if (_curKS.IsKeyDown(Keys.Y) && toolIndicate != 2) {toolIndicate = 2; RegistrarAccion("Equipo pala");}
-            if (_curKS.IsKeyDown(Keys.U) && toolIndicate != -1) {toolIndicate = -1; RegistrarAccion("Desequipo");}
+            if (_curKS.IsKeyDown(Keys.R) && toolIndicate != 0) { toolIndicate = 0; RegistrarAccion("Equipo pico"); }
+            if (_curKS.IsKeyDown(Keys.T) && toolIndicate != 1) { toolIndicate = 1; RegistrarAccion("Equipo hacha"); }
+            if (_curKS.IsKeyDown(Keys.Y) && toolIndicate != 2) { toolIndicate = 2; RegistrarAccion("Equipo pala"); }
+            if (_curKS.IsKeyDown(Keys.U) && toolIndicate != -1) { toolIndicate = -1; RegistrarAccion("Desequipo"); }
             for (int i = 0; i < toolEquipped.Length; i++)
             {
                 toolEquipped[i] = (i == toolIndicate);
             }
             if (_curKS.IsKeyDown(Keys.E) && _oldKS.IsKeyUp(Keys.E))
             {
-                if (toolEquipped[0])
+                if (toolEquipped[0]) // Pico
                 {
-                    if (checkResource(ref playerCenter, rockPosition, _rock, rockState) == true)
+                    if (checkResource(ref playerCenter, rockPosition, _rock, rockState, true) == 1)
                     {
                         RegistrarAccion("Pico piedra");
                     }
+                    else if (checkResource(ref playerCenter, treePosition, _bottomTree, treeState, false) == 1 ||
+                    checkResource(ref playerCenter, sandPosition, _sand, sandState, false) == 1)
+                    {
+                        MostrarError("Herramienta incorrecta");
+                    }
                 }
-                else if (toolEquipped[1])
+                else if (toolEquipped[1]) // Hacha
                 {
-                    if (checkResource(ref playerCenter, treePosition, _bottomTree, treeState) == true)
+                    if (checkResource(ref playerCenter, treePosition, _bottomTree, treeState, true) == 1)
                     {
                         RegistrarAccion("Talo arbol");
                     }
+                    else if (checkResource(ref playerCenter, rockPosition, _rock, rockState, false) == 1 ||
+                    checkResource(ref playerCenter, sandPosition, _sand, sandState, false) == 1)
+                    {
+                        MostrarError("Herramienta incorrecta");
+                    }
                 }
-                else if (toolEquipped[2])
+                else if (toolEquipped[2]) // Pala
                 {
-                    if (checkResource(ref playerCenter, sandPosition, _sand, sandState))
+                    if (checkResource(ref playerCenter, sandPosition, _sand, sandState, true) == 1)
                     {
                         RegistrarAccion("Paleo arena");
                     }
+                    else if (checkResource(ref playerCenter, rockPosition, _rock, rockState, false) == 1 ||
+                    checkResource(ref playerCenter, treePosition, _bottomTree, treeState, false) == 1)
+                    {
+                        MostrarError("Herramienta incorrecta");
+                    }
                 }
+            }
+        }
+        private void MostrarError(string mensaje)
+        {
+            mensajesError.Add(mensaje);
+            tiempoError = 0.7f;
+            if (mensajesError.Count > 1)
+            {
+                mensajesError.RemoveAt(0);
             }
         }
         private void animation(GameTime gameTime)
