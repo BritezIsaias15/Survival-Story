@@ -45,8 +45,9 @@ namespace Survival_Story
         private int rockCount = 0;
         private int treeCount = 0;
         private int sandCount = 0;
+        private int meatCount = 0;
 
-        private Texture2D _player, _rock, _topTree, _bottomTree, _sand, _map, _woodPicaxe, _woodAxe, _woodShovel, _inventory, _menu, _select_play, _select_exit, _select_controls, _controls, _rockDrop, _sandDrop, _treeDrop, _mapNight, _pantmuerte, _oveja, _toro, _pixel, _casa, _registroacciones;
+        private Texture2D _player, _rock, _topTree, _bottomTree, _sand, _map, _woodPicaxe, _woodAxe, _woodShovel, _inventory, _menu, _select_play, _select_exit, _select_controls, _controls, _rockDrop, _sandDrop, _treeDrop, _mapNight, _pantmuerte, _oveja, _toro, _pixel, _casa, _registroacciones, _meatDrop;
         private bool casaColocada = false;
         private SpriteFont _font;
         private bool _nameFieldActive;
@@ -79,7 +80,6 @@ namespace Survival_Story
         private float ovejaMoveDuration = 0.3f;
         private int ovejaDireccionHuir = -1;
         private int ovejaMovimientosHuir = 0;
-
         private Vector2 toroPosition, toroInicio, toroDestino;
         private int toroUltimoMov = 0;
         private bool toroEsperando = true;
@@ -126,8 +126,13 @@ namespace Survival_Story
         private KeyboardState _curKS, _oldKS;
         private Stack<string> historialAcciones = new Stack<string>();
         private string ultimaAccion = "Ninguna accion";
-        private int playerId;
         private string playerName = string.Empty;
+        int ovejaState = 1;
+        int ovejaHealth = 3;
+        float ovejaHitCooldown = 0f;
+        int toroState = 1;
+        int toroHealth = 5;
+        float toroHitCooldown = 0f;
 
         public Game1()
         {
@@ -353,6 +358,7 @@ namespace Survival_Story
             _casa = Content.Load<Texture2D>("assets/images/house");
             _pantmuerte = Content.Load<Texture2D>("assets/images/pantallamuerte");
             _registroacciones = Content.Load<Texture2D>("assets/images/registro acciones");
+            _meatDrop = Content.Load<Texture2D>("assets/images/meatDrop");
             playerRectangle = new Rectangle[8, 3];
             int spriteWidth = 32;
             int spriteHeight = 32;
@@ -518,6 +524,29 @@ namespace Survival_Story
                 ToroLogic(gameTime);
                 playerStats(gameTime);
                 timeDay(gameTime);
+                ProcesarAtaqueYDropAnimal(
+                    gameTime,
+                    "la oveja",
+                    ovejaPosition,
+                    64,
+                    64,
+                    ref ovejaState,
+                    ref ovejaHealth,
+                    ref ovejaHitCooldown,
+                    ref ovejaMoviendo
+                );
+
+                ProcesarAtaqueYDropAnimal(
+                    gameTime,
+                    "el toro",
+                    toroPosition,
+                    64,
+                    64,
+                    ref toroState,
+                    ref toroHealth,
+                    ref toroHitCooldown,
+                    ref toroMoviendo
+                );
                 _camera.Follow(new Vector2(playerPosition.X + playerWidth / 2f, playerPosition.Y + playerHeight / 2f), GraphicsDevice.Viewport);
             }
             else if (isDead)
@@ -569,7 +598,27 @@ namespace Survival_Story
                                 RegistrarAccion("Recogio piedra");
                             else if (itemID == 3)
                                 RegistrarAccion("Recogio arena");
+                            else if (itemID == 4)
+                                RegistrarAccion("Recogio carne");
                         }
+                    }
+                }
+            }
+        }
+        private void checkMeatDrop(Rectangle playerHitbox, Vector2 dropPos, Texture2D dropTex, ref int state, ref int count, int itemID)
+        {
+            if (state == 2)
+            {
+                Rectangle dropHitbox = new Rectangle((int)dropPos.X, (int)dropPos.Y, dropTex.Width, dropTex.Height);
+                if (playerHitbox.Intersects(dropHitbox) && _curKS.IsKeyDown(Keys.Q))
+                {
+                    if (AgregarAlInventario(itemID))
+                    {
+                        state = 0;
+                        count++;
+
+                        if (itemID == 4)
+                            RegistrarAccion("Recogio carne");
                     }
                 }
             }
@@ -580,6 +629,9 @@ namespace Survival_Story
             checkDropPickup(playerHitbox, rockPosition, _rockDrop, rockState, ref rockCount, 2);
             checkDropPickup(playerHitbox, treePosition, _treeDrop, treeState, ref treeCount, 1);
             checkDropPickup(playerHitbox, sandPosition, _sandDrop, sandState, ref sandCount, 3);
+            checkMeatDrop(playerHitbox, ovejaPosition, _meatDrop, ref ovejaState, ref meatCount, 4);
+            checkMeatDrop(playerHitbox, toroPosition, _meatDrop, ref toroState, ref meatCount, 4);
+
         }
         private void drawResource(Texture2D res, Texture2D resDrop, Vector2[] resPosition, int[] resState)
         {
@@ -655,21 +707,38 @@ namespace Survival_Story
             int anchoOveja = _oveja.Width / 3;
             int altoOveja = _oveja.Height / 8;
             Rectangle ovejaSource = new Rectangle(
-            ovejaFrame * anchoOveja,
-            ovejaDireccionSprite * altoOveja,
-            anchoOveja,
-            altoOveja
+                ovejaFrame * anchoOveja,
+                ovejaDireccionSprite * altoOveja,
+                anchoOveja,
+                altoOveja
             );
-            _spriteBatch.Draw(_oveja, ovejaPosition + new Vector2(12, 7), ovejaSource, Color.White, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0.297f);
+            DibujarAnimalYDrop(
+                _oveja,
+                ovejaPosition,
+                ovejaSource,
+                new Vector2(12, 7),
+                0.297f,
+                _meatDrop, // Reemplaza por la textura de drop de la oveja
+                ovejaState
+            );
+
             int anchoToro = _toro.Width / 3;
             int altoToro = _toro.Height / 4;
             Rectangle toroSource = new Rectangle(
-            toroFrame * anchoToro,
-            toroDireccionSprite * altoToro,
-            anchoToro,
-            altoToro
+                toroFrame * anchoToro,
+                toroDireccionSprite * altoToro,
+                anchoToro,
+                altoToro
             );
-            _spriteBatch.Draw(_toro, toroPosition + new Vector2(2, 2), toroSource, Color.White, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0.296f);
+            DibujarAnimalYDrop(
+                _toro,
+                toroPosition,
+                toroSource,
+                new Vector2(2, 2),
+                0.296f,
+                _meatDrop, // Reemplaza por la textura de drop del toro
+                toroState
+            );
             _spriteBatch.Draw(_player, playerPosition, playerRectangle[playerDirection, currentAnimationIndex], Color.White, 0.0f, Vector2.Zero, 2.0f, SpriteEffects.None, 0.298f);
             if (toolEquipped[0])
             {
@@ -708,6 +777,10 @@ namespace Survival_Story
                     if (inventoryStorage[i] == 3)
                     {
                         _spriteBatch.Draw(_sandDrop, inventorySlot[i], null, Color.White, 0.0f, Vector2.Zero, SpriteEffects.None, 0.9f);
+                    }
+                    if (inventoryStorage[i] == 4)
+                    {
+                        _spriteBatch.Draw(_meatDrop, inventorySlot[i], null, Color.White, 0.0f, Vector2.Zero, SpriteEffects.None, 0.9f);
                     }
                 }
             }
@@ -881,6 +954,7 @@ namespace Survival_Story
         }
         private void AnimalLogic(GameTime gameTime)
         {
+            if (ovejaState != 1) return; // En AnimalLogic
             float delta = (float)gameTime.ElapsedGameTime.TotalSeconds;
             if (ovejaMoviendo)
             {
@@ -1056,6 +1130,7 @@ namespace Survival_Story
         private void ToroLogic(GameTime gameTime)
         {
             float delta = (float)gameTime.ElapsedGameTime.TotalSeconds;
+            if (toroState != 1) return;
             if (toroMoviendo)
             {
                 toroMoveTimer += delta;
@@ -1194,6 +1269,105 @@ namespace Survival_Story
                 toroAnimTimer = 0f;
                 toroFrame = 0;
                 toroMoviendo = true;
+            }
+        }
+
+        private void ProcesarAtaqueYDropAnimal(
+            GameTime gameTime,
+            string nombreAnimal,
+            Vector2 posicionAnimal,
+            int anchoHitbox,
+            int altoHitbox,
+            ref int estadoAnimal,
+            ref int vidaAnimal,
+            ref float cooldownGolpe,
+            ref bool animalMoviendo)
+        {
+            if (estadoAnimal != 1)
+                return;
+
+            float delta = (float)gameTime.ElapsedGameTime.TotalSeconds;
+            if (cooldownGolpe > 0f)
+                cooldownGolpe -= delta;
+
+            // Golpear con el hacha equipada (toolEquipped[1])
+            if (toolEquipped[1] && cooldownGolpe <= 0f)
+            {
+                bool ataco = _curMS.LeftButton == ButtonState.Pressed ||
+                            (_curKS.IsKeyDown(Keys.E) && _oldKS.IsKeyUp(Keys.E));
+
+                if (ataco)
+                {
+                    Rectangle alcanceHacha = new Rectangle(
+                        (int)playerPosition.X - 24,
+                        (int)playerPosition.Y - 24,
+                        playerWidth + 48,
+                        playerHeight + 48
+                    );
+
+                    Rectangle hitboxAnimal = new Rectangle(
+                        (int)posicionAnimal.X,
+                        (int)posicionAnimal.Y,
+                        anchoHitbox,
+                        altoHitbox
+                    );
+
+                    if (alcanceHacha.Intersects(hitboxAnimal))
+                    {
+                        vidaAnimal--;
+                        cooldownGolpe = 0.35f;
+
+                        if (vidaAnimal <= 0)
+                        {
+                            estadoAnimal = 2; // Deja _meatDrop en el suelo
+                            animalMoviendo = false;
+                            RegistrarAccion($"Mato a {nombreAnimal}");
+                        }
+                        else
+                        {
+                            RegistrarAccion($"Golpeo a {nombreAnimal}");
+                        }
+                    }
+                }
+            }
+        }
+
+        private void DibujarAnimalYDrop(
+            Texture2D spriteAnimal,
+            Vector2 posicionAnimal,
+            Rectangle sourceRectAnimal,
+            Vector2 offsetVisual,
+            float layerDepthAnimal,
+            Texture2D texturaDrop,
+            int estadoAnimal)
+        {
+            if (estadoAnimal == 1)
+            {
+                _spriteBatch.Draw(
+                    spriteAnimal,
+                    posicionAnimal + offsetVisual,
+                    sourceRectAnimal,
+                    Color.White,
+                    0f,
+                    Vector2.Zero,
+                    1f,
+                    SpriteEffects.None,
+                    layerDepthAnimal
+                );
+            }
+            else if (estadoAnimal == 2 && texturaDrop != null)
+            {
+                _spriteBatch.Draw(
+                    texturaDrop,
+                    posicionAnimal + offsetVisual,
+                    null,
+                    Color.White,
+                    0f,
+                    Vector2.Zero,
+                    1f,
+                    SpriteEffects.None,
+                    0.1f
+                );
             }
         }
         private bool checkResource(ref Vector2 playerCenter, Vector2[] objPosition, Texture2D obj, int[] objState)
