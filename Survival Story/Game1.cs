@@ -47,7 +47,7 @@ namespace Survival_Story
         private int sandCount = 0;
         private int meatCount = 0;
 
-        private Texture2D _player, _rock, _topTree, _bottomTree, _sand, _map, _woodPicaxe, _woodAxe, _woodShovel, _inventory, _menu, _select_play, _select_exit, _select_controls, _controls, _rockDrop, _sandDrop, _treeDrop, _mapNight, _pantmuerte, _oveja, _toro, _pixel, _casa, _registroacciones, _meatDrop;
+        private Texture2D _player, _rock, _topTree, _bottomTree, _sand, _map, _woodPicaxe, _woodAxe, _woodShovel, _inventory, _menu, _select_play, _select_exit, _select_controls, _controls, _rockDrop, _sandDrop, _treeDrop, _mapNight, _pantmuerte, _oveja, _toro, _pixel, _casa, _registroacciones, _meatDrop, _error;
         private bool casaColocada = false;
         private SpriteFont _font;
         private bool _nameFieldActive;
@@ -96,7 +96,7 @@ namespace Survival_Story
         private int toroMovimientosAcercarse = 0;
 
         private Vector2 movement, toolPosition;
-        private Vector2 mapPosition = new Vector2(0,0);
+        private Vector2 mapPosition = new Vector2(0, 0);
         private Vector2 playerPosition = new Vector2(710, 710);
         private Vector2[] rockPosition, treePosition, sandPosition;
 
@@ -133,6 +133,10 @@ namespace Survival_Story
         int toroState = 1;
         int toroHealth = 5;
         float toroHitCooldown = 0f;
+        private int playerId;
+        private int sessionId;
+        private List<string> mensajesError = new List<string>();
+        private float tiempoError = 0;
 
         public Game1()
         {
@@ -213,7 +217,6 @@ namespace Survival_Story
                 playerPosition = new Vector2(710, 710);
                 currentDay = 1;
                 dayTimer = 0f;
-
             }
         }
 
@@ -301,7 +304,6 @@ namespace Survival_Story
                 treePosition[i] = positionTry;
                 treeState[i] = 1;
             }
-
             for (int i = 0; i < cantSand; i++)
             {
                 int sandY, sandX;
@@ -335,7 +337,7 @@ namespace Survival_Story
             _pixel.SetData(new[] { Color.White });
             _player = Content.Load<Texture2D>("assets/images/playerSheet");
             _rock = Content.Load<Texture2D>("assets/images/rock");
-            _rockDrop = Content.Load<Texture2D>("assets/images/rockDrop");
+            _rockDrop = Content.Load<Texture2D>("assets/images/RockDrop");
             _sand = Content.Load<Texture2D>("assets/images/sand");
             _sandDrop = Content.Load<Texture2D>("assets/images/sandDrop");
             _topTree = Content.Load<Texture2D>("assets/images/topTree");
@@ -359,6 +361,7 @@ namespace Survival_Story
             _pantmuerte = Content.Load<Texture2D>("assets/images/pantallamuerte");
             _registroacciones = Content.Load<Texture2D>("assets/images/registro acciones");
             _meatDrop = Content.Load<Texture2D>("assets/images/meatDrop");
+            _error = Content.Load<Texture2D>("assets/images/error");
             playerRectangle = new Rectangle[8, 3];
             int spriteWidth = 32;
             int spriteHeight = 32;
@@ -412,12 +415,10 @@ namespace Survival_Story
                 playerHealth -= 5f * deltaTime;
             }
         }
-
-       private void GuardarPartida()
+        private void GuardarPartida()
         {
             if (string.IsNullOrWhiteSpace(playerName))
                 return;
-
             ConnectDB.playerData perfil = new ConnectDB.playerData
             {
                 name = playerName.Trim(),
@@ -425,14 +426,11 @@ namespace Survival_Story
                 axisY = (int)playerPosition.Y
             };
             ConnectDB.Jugador(perfil);
-
             int idJugador = ConnectDB.ObtenerIdJugador(perfil.name);
-
             if (idJugador <= 0)
             {
                 return;
             }
-
             ConnectDB.sessionData sesion = new ConnectDB.sessionData
             {
                 id_player = idJugador,
@@ -441,7 +439,6 @@ namespace Survival_Story
             };
             ConnectDB.Sesion(sesion);
         }
-
         protected override void Update(GameTime gameTime)
         {
             _oldKS = _curKS;
@@ -449,6 +446,8 @@ namespace Survival_Story
             _oldMS = _curMS;
             _curMS = Mouse.GetState();
             bool singleClick = _curMS.LeftButton == ButtonState.Pressed && _oldMS.LeftButton == ButtonState.Released;
+            if (tiempoError > 0)
+                tiempoError -= (float)gameTime.ElapsedGameTime.TotalSeconds;
             if (_curKS.IsKeyDown(Keys.Escape) && _oldKS.IsKeyUp(Keys.Escape))
             {
                 if (menuOpen)
@@ -576,6 +575,7 @@ namespace Survival_Story
                     return true;
                 }
             }
+            MostrarError("No tienes suficiente espacio");
             return false;
         }
         private void checkDropPickup(Rectangle playerHitbox, Vector2[] dropPos, Texture2D dropTex, int[] state, ref int count, int itemID)
@@ -585,13 +585,12 @@ namespace Survival_Story
                 if (state[i] == 2)
                 {
                     Rectangle dropHitbox = new Rectangle((int)dropPos[i].X, (int)dropPos[i].Y, dropTex.Width, dropTex.Height);
-                    if (playerHitbox.Intersects(dropHitbox) && _curKS.IsKeyDown(Keys.Q))
+                    if (playerHitbox.Intersects(dropHitbox) && _curKS.IsKeyDown(Keys.Q) && _oldKS.IsKeyUp(Keys.Q))
                     {
                         if (AgregarAlInventario(itemID))
                         {
                             state[i] = 0;
                             count++;
-
                             if (itemID == 1)
                                 RegistrarAccion("Recogio madera");
                             else if (itemID == 2)
@@ -787,20 +786,24 @@ namespace Survival_Story
             _spriteBatch.DrawString(_font, "Ultima accion: " + ultimaAccion, new Vector2(20, 50), Color.White);
             if (_curKS.IsKeyDown(Keys.H))
             {
+                int espacioR = 33;
                 _spriteBatch.Draw(_registroacciones, new Vector2(620, 60), null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.98f);
-                int espacio = 33;
-
                 foreach (string accion in historialAcciones)
                 {
-                    espacio += 32;
-
-                    if (espacio + 32 > 350)
+                    espacioR += 32;
+                    if (espacioR + 32 > 350)
                         break;
-
-                    _spriteBatch.DrawString(_font,accion,new Vector2(630, espacio ),Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.99f);
+                    _spriteBatch.DrawString(_font, accion, new Vector2(630, espacioR), Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.99f);
                 }
             }
-
+            if (tiempoError > 0)
+            {
+                _spriteBatch.Draw(_error, new Vector2(20, 300), null, Color.White, 0f, Vector2.Zero, 1.1f, SpriteEffects.None, 0.98f);
+                foreach (string mensaje in mensajesError)
+                {
+                    _spriteBatch.DrawString(_font, mensaje, new Vector2(80, 325), Color.Red, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0.99f);
+                }
+            }
             if (menuOpen)
             {
                 _spriteBatch.Draw(_menu, new Vector2(0, 0), null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.98f);
@@ -1370,7 +1373,7 @@ namespace Survival_Story
                 );
             }
         }
-        private bool checkResource(ref Vector2 playerCenter, Vector2[] objPosition, Texture2D obj, int[] objState)
+        private int checkResource(ref Vector2 playerCenter, Vector2[] objPosition, Texture2D obj, int[] objState, bool herramientaCorrecta)
         {
             for (int i = 0; i < objPosition.Length; i++)
             {
@@ -1380,12 +1383,15 @@ namespace Survival_Story
                     float distance = Vector2.Distance(playerCenter, objCenter);
                     if (distance < 80.0f)
                     {
-                        objState[i] = 2;
-                        return true;
+                        if (herramientaCorrecta)
+                        {
+                            objState[i] = 2;
+                        }
+                        return 1;
                     }
                 }
             }
-            return false;
+            return 0;
         }
         private void colocarCasa()
         {
@@ -1440,37 +1446,61 @@ namespace Survival_Story
         private void interact()
         {
             Vector2 playerCenter = new Vector2(playerPosition.X + (playerWidth / 2f), playerPosition.Y + (playerHeight / 2f));
-            if (_curKS.IsKeyDown(Keys.R) && toolIndicate != 0) {toolIndicate = 0; RegistrarAccion("Equipo pico");}
-            if (_curKS.IsKeyDown(Keys.T) && toolIndicate != 1) {toolIndicate = 1; RegistrarAccion("Equipo hacha");} 
-            if (_curKS.IsKeyDown(Keys.Y) && toolIndicate != 2) {toolIndicate = 2; RegistrarAccion("Equipo pala");}
-            if (_curKS.IsKeyDown(Keys.U) && toolIndicate != -1) {toolIndicate = -1; RegistrarAccion("Desequipo");}
+            if (_curKS.IsKeyDown(Keys.R) && toolIndicate != 0) { toolIndicate = 0; RegistrarAccion("Equipo pico"); }
+            if (_curKS.IsKeyDown(Keys.T) && toolIndicate != 1) { toolIndicate = 1; RegistrarAccion("Equipo hacha"); }
+            if (_curKS.IsKeyDown(Keys.Y) && toolIndicate != 2) { toolIndicate = 2; RegistrarAccion("Equipo pala"); }
+            if (_curKS.IsKeyDown(Keys.U) && toolIndicate != -1) { toolIndicate = -1; RegistrarAccion("Desequipo"); }
             for (int i = 0; i < toolEquipped.Length; i++)
             {
                 toolEquipped[i] = (i == toolIndicate);
             }
             if (_curKS.IsKeyDown(Keys.E) && _oldKS.IsKeyUp(Keys.E))
             {
-                if (toolEquipped[0])
+                if (toolEquipped[0]) // Pico
                 {
-                    if (checkResource(ref playerCenter, rockPosition, _rock, rockState) == true)
+                    if (checkResource(ref playerCenter, rockPosition, _rock, rockState, true) == 1)
                     {
                         RegistrarAccion("Pico piedra");
                     }
+                    else if (checkResource(ref playerCenter, treePosition, _bottomTree, treeState, false) == 1 ||
+                    checkResource(ref playerCenter, sandPosition, _sand, sandState, false) == 1)
+                    {
+                        MostrarError("Herramienta incorrecta");
+                    }
                 }
-                else if (toolEquipped[1])
+                else if (toolEquipped[1]) // Hacha
                 {
-                    if (checkResource(ref playerCenter, treePosition, _bottomTree, treeState) == true)
+                    if (checkResource(ref playerCenter, treePosition, _bottomTree, treeState, true) == 1)
                     {
                         RegistrarAccion("Talo arbol");
                     }
+                    else if (checkResource(ref playerCenter, rockPosition, _rock, rockState, false) == 1 ||
+                    checkResource(ref playerCenter, sandPosition, _sand, sandState, false) == 1)
+                    {
+                        MostrarError("Herramienta incorrecta");
+                    }
                 }
-                else if (toolEquipped[2])
+                else if (toolEquipped[2]) // Pala
                 {
-                    if (checkResource(ref playerCenter, sandPosition, _sand, sandState))
+                    if (checkResource(ref playerCenter, sandPosition, _sand, sandState, true) == 1)
                     {
                         RegistrarAccion("Paleo arena");
                     }
+                    else if (checkResource(ref playerCenter, rockPosition, _rock, rockState, false) == 1 ||
+                    checkResource(ref playerCenter, treePosition, _bottomTree, treeState, false) == 1)
+                    {
+                        MostrarError("Herramienta incorrecta");
+                    }
                 }
+            }
+        }
+        private void MostrarError(string mensaje)
+        {
+            mensajesError.Add(mensaje);
+            tiempoError = 0.7f;
+            if (mensajesError.Count > 1)
+            {
+                mensajesError.RemoveAt(0);
             }
         }
         private void animation(GameTime gameTime)
