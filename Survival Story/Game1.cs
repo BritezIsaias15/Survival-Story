@@ -36,6 +36,46 @@ public class Camera2D
 
 namespace Survival_Story
 {
+    public struct AnimalData
+    {
+        public string Nombre;
+        public Vector2 Posicion;
+        public Vector2 Inicio;
+        public Vector2 Destino;
+
+        // 1 = vivo, 2 = drop en el suelo, 0 = recogido
+        public int Estado;
+        public int Vida;
+        public float HitCooldown;
+
+        public int UltimoMov;
+        public bool Esperando;
+        public float Timer;
+        public float Delay;
+
+        public int Frame;
+        public int DireccionSprite;
+        public float AnimTimer;
+        public float AnimSpeed;
+
+        public bool Moviendo;
+        public float MoveTimer;
+        public float MoveDuration;
+        public int DireccionObjetivo;
+        public int MovimientosObjetivo;
+
+        public bool HuyeDelJugador;
+        public int[] FilasPorDireccion; // [derecha, izquierda, abajo, arriba]
+
+        public Texture2D SpriteSheet;
+        public Texture2D DropTexture;
+        public Vector2 OffsetVisual;
+        public float LayerDepth;
+        public int ColumnasSprite;
+        public int FilasSprite;
+        public int DropItemId;
+    }
+
     public class Game1 : Game
     {
         private GraphicsDeviceManager _graphics;
@@ -66,34 +106,9 @@ namespace Survival_Story
         private Camera2D _camera;
         private Random _random;
 
-        private Vector2 ovejaPosition, ovejaInicio, ovejaDestino, casaPosition;
-        private int UltimoMov = 0;
-        private bool _esperando = true;
-        private float _timer = 0f;
-        private float _delay = 1f;
-        private int ovejaFrame = 1;
-        private int ovejaDireccionSprite = 0;
-        private float ovejaAnimTimer = 0f;
-        private float ovejaAnimSpeed = 0.12f;
-        private bool ovejaMoviendo = false;
-        private float ovejaMoveTimer = 0f;
-        private float ovejaMoveDuration = 0.3f;
-        private int ovejaDireccionHuir = -1;
-        private int ovejaMovimientosHuir = 0;
-        private Vector2 toroPosition, toroInicio, toroDestino;
-        private int toroUltimoMov = 0;
-        private bool toroEsperando = true;
-        private float toroTimer = 0f;
-        private float toroDelay = 1f;
-        private int toroFrame = 1;
-        private int toroDireccionSprite = 0;
-        private float toroAnimTimer = 0f;
-        private float toroAnimSpeed = 0.12f;
-        private bool toroMoviendo = false;
-        private float toroMoveTimer = 0f;
-        private float toroMoveDuration = 0.3f;
-        private int toroDireccionAcercarse = -1;
-        private int toroMovimientosAcercarse = 0;
+        private AnimalData oveja;
+        private AnimalData toro;
+        private Vector2 casaPosition;
 
         private Vector2 movement, toolPosition;
         private Vector2 mapPosition = new Vector2(0, 0);
@@ -127,12 +142,7 @@ namespace Survival_Story
         private Stack<string> historialAcciones = new Stack<string>();
         private string ultimaAccion = "Ninguna accion";
         private string playerName = string.Empty;
-        int ovejaState = 1;
-        int ovejaHealth = 3;
-        float ovejaHitCooldown = 0f;
-        int toroState = 1;
-        int toroHealth = 5;
-        float toroHitCooldown = 0f;
+
         private int playerId;
         private int sessionId;
         private List<string> mensajesError = new List<string>();
@@ -208,9 +218,7 @@ namespace Survival_Story
                     dayTimer = 0f;
                 }
 
-                System.Diagnostics.Debug.WriteLine(
-                    $"Partida cargada."
-                );
+                System.Diagnostics.Debug.WriteLine("Partida cargada.");
             }
             else
             {
@@ -233,8 +241,46 @@ namespace Survival_Story
                 inventoryStorage[i] = 0;
             }
 
-            ovejaPosition = pos(12, 12);
-            toroPosition = pos(20, 20);
+            oveja = new AnimalData
+            {
+                Nombre = "la oveja",
+                Posicion = pos(12, 12),
+                Estado = 1,
+                Vida = 3,
+                Esperando = true,
+                Delay = 1f,
+                Frame = 1,
+                AnimSpeed = 0.12f,
+                MoveDuration = 0.3f,
+                HuyeDelJugador = true,
+                FilasPorDireccion = new int[] { 2, 6, 0, 4 },
+                OffsetVisual = new Vector2(12, 7),
+                LayerDepth = 0.297f,
+                ColumnasSprite = 3,
+                FilasSprite = 8,
+                DropItemId = 4
+            };
+
+            toro = new AnimalData
+            {
+                Nombre = "el toro",
+                Posicion = pos(20, 20),
+                Estado = 1,
+                Vida = 5,
+                Esperando = true,
+                Delay = 1f,
+                Frame = 1,
+                AnimSpeed = 0.12f,
+                MoveDuration = 0.3f,
+                HuyeDelJugador = false,
+                FilasPorDireccion = new int[] { 1, 3, 0, 2 },
+                OffsetVisual = new Vector2(2, 2),
+                LayerDepth = 0.296f,
+                ColumnasSprite = 3,
+                FilasSprite = 4,
+                DropItemId = 4
+            };
+
             menuOpen = true;
             isDead = false;
 
@@ -304,6 +350,7 @@ namespace Survival_Story
                 treePosition[i] = positionTry;
                 treeState[i] = 1;
             }
+
             for (int i = 0; i < cantSand; i++)
             {
                 int sandY, sandX;
@@ -326,10 +373,12 @@ namespace Survival_Story
                 sandPosition[i] = positionTry;
                 sandState[i] = 1;
             }
+
             playerTimer = 0;
             threshold = 250;
             base.Initialize();
         }
+
         protected override void LoadContent()
         {
             _spriteBatch = new SpriteBatch(GraphicsDevice);
@@ -362,6 +411,12 @@ namespace Survival_Story
             _registroacciones = Content.Load<Texture2D>("assets/images/registro acciones");
             _meatDrop = Content.Load<Texture2D>("assets/images/meatDrop");
             _error = Content.Load<Texture2D>("assets/images/error");
+
+            oveja.SpriteSheet = _oveja;
+            oveja.DropTexture = _meatDrop;
+            toro.SpriteSheet = _toro;
+            toro.DropTexture = _meatDrop;
+
             playerRectangle = new Rectangle[8, 3];
             int spriteWidth = 32;
             int spriteHeight = 32;
@@ -372,6 +427,7 @@ namespace Survival_Story
                     playerRectangle[i, j] = new Rectangle(j * spriteWidth, i * spriteHeight, spriteWidth, spriteHeight);
                 }
             }
+
             inventorySlot[0] = new Rectangle(128, 138, 70, 70);
             inventorySlot[1] = new Rectangle(247, 138, 70, 70);
             inventorySlot[2] = new Rectangle(366, 138, 70, 70);
@@ -383,6 +439,7 @@ namespace Survival_Story
             inventorySlot[8] = new Rectangle(485, 250, 70, 70);
             inventorySlot[9] = new Rectangle(597, 250, 70, 70);
         }
+
         void playerStats(GameTime gameTime)
         {
             float deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
@@ -400,6 +457,7 @@ namespace Survival_Story
                 isDead = true;
             }
         }
+
         void timeDay(GameTime gameTime)
         {
             float deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
@@ -415,10 +473,12 @@ namespace Survival_Story
                 playerHealth -= 5f * deltaTime;
             }
         }
+
         private void GuardarPartida()
         {
             if (string.IsNullOrWhiteSpace(playerName))
                 return;
+
             ConnectDB.playerData perfil = new ConnectDB.playerData
             {
                 name = playerName.Trim(),
@@ -426,11 +486,13 @@ namespace Survival_Story
                 axisY = (int)playerPosition.Y
             };
             ConnectDB.Jugador(perfil);
+
             int idJugador = ConnectDB.ObtenerIdJugador(perfil.name);
             if (idJugador <= 0)
             {
                 return;
             }
+
             ConnectDB.sessionData sesion = new ConnectDB.sessionData
             {
                 id_player = idJugador,
@@ -439,6 +501,123 @@ namespace Survival_Story
             };
             ConnectDB.Sesion(sesion);
         }
+
+        private void ActualizarAtaqueAnimal(GameTime gameTime, ref AnimalData animal)
+        {
+            if (animal.Estado != 1)
+                return;
+
+            float delta = (float)gameTime.ElapsedGameTime.TotalSeconds;
+            if (animal.HitCooldown > 0f)
+                animal.HitCooldown -= delta;
+
+            // Golpear con el hacha equipada (toolEquipped[1])
+            if (toolEquipped[1] && animal.HitCooldown <= 0f)
+            {
+                bool ataco = (_curMS.LeftButton == ButtonState.Pressed && _oldMS.LeftButton == ButtonState.Released) ||
+                             (_curKS.IsKeyDown(Keys.E) && _oldKS.IsKeyUp(Keys.E));
+
+                if (ataco)
+                {
+                    Rectangle alcanceHacha = new Rectangle(
+                        (int)playerPosition.X - 24,
+                        (int)playerPosition.Y - 24,
+                        playerWidth + 48,
+                        playerHeight + 48
+                    );
+
+                    Rectangle hitboxAnimal = new Rectangle(
+                        (int)animal.Posicion.X,
+                        (int)animal.Posicion.Y,
+                        64,
+                        64
+                    );
+
+                    if (alcanceHacha.Intersects(hitboxAnimal))
+                    {
+                        animal.Vida--;
+                        animal.HitCooldown = 0.35f;
+
+                        if (animal.Vida <= 0)
+                        {
+                            animal.Estado = 2; // Deja el drop en el suelo
+                            animal.Moviendo = false;
+                            RegistrarAccion($"Mato a {animal.Nombre}");
+                        }
+                        else
+                        {
+                            RegistrarAccion($"Golpeo a {animal.Nombre}");
+                        }
+                    }
+                }
+            }
+        }
+
+        private void RecogerDropAnimal(Rectangle playerHitbox, ref AnimalData animal, ref int count)
+        {
+            if (animal.Estado == 2 && animal.DropTexture != null)
+            {
+                Rectangle dropHitbox = new Rectangle(
+                    (int)animal.Posicion.X,
+                    (int)animal.Posicion.Y,
+                    animal.DropTexture.Width,
+                    animal.DropTexture.Height
+                );
+
+                if (playerHitbox.Intersects(dropHitbox) && _curKS.IsKeyDown(Keys.Q) && _oldKS.IsKeyUp(Keys.Q))
+                {
+                    if (AgregarAlInventario(animal.DropItemId))
+                    {
+                        animal.Estado = 0;
+                        count++;
+                        RegistrarAccion("Recogio carne");
+                    }
+                }
+            }
+        }
+
+        private void DibujarAnimal(AnimalData animal)
+        {
+            if (animal.Estado == 1 && animal.SpriteSheet != null)
+            {
+                int anchoFrame = animal.SpriteSheet.Width / animal.ColumnasSprite;
+                int altoFrame = animal.SpriteSheet.Height / animal.FilasSprite;
+
+                Rectangle sourceRect = new Rectangle(
+                    animal.Frame * anchoFrame,
+                    animal.DireccionSprite * altoFrame,
+                    anchoFrame,
+                    altoFrame
+                );
+
+                _spriteBatch.Draw(
+                    animal.SpriteSheet,
+                    animal.Posicion + animal.OffsetVisual,
+                    sourceRect,
+                    Color.White,
+                    0f,
+                    Vector2.Zero,
+                    1f,
+                    SpriteEffects.None,
+                    animal.LayerDepth
+                );
+            }
+            else if (animal.Estado == 2 && animal.DropTexture != null)
+            {
+                _spriteBatch.Draw(
+                    animal.DropTexture,
+                    animal.Posicion + animal.OffsetVisual,
+                    null,
+                    Color.White,
+                    0f,
+                    Vector2.Zero,
+                    1f,
+                    SpriteEffects.None,
+                    0.1f
+                );
+            }
+        }
+
         protected override void Update(GameTime gameTime)
         {
             _oldKS = _curKS;
@@ -446,8 +625,10 @@ namespace Survival_Story
             _oldMS = _curMS;
             _curMS = Mouse.GetState();
             bool singleClick = _curMS.LeftButton == ButtonState.Pressed && _oldMS.LeftButton == ButtonState.Released;
+
             if (tiempoError > 0)
                 tiempoError -= (float)gameTime.ElapsedGameTime.TotalSeconds;
+
             if (_curKS.IsKeyDown(Keys.Escape) && _oldKS.IsKeyUp(Keys.Escape))
             {
                 if (menuOpen)
@@ -460,10 +641,12 @@ namespace Survival_Story
                     menuOpen = true;
                 }
             }
+
             Rectangle buttonPlay = new Rectangle(37, 90, 288, 96);
             Rectangle buttonControls = new Rectangle(91, 192, 288, 96);
             Rectangle buttonExit = new Rectangle(145, 294, 288, 96);
             Rectangle buttonExitControls = new Rectangle(345, 348, 288, 96);
+
             if (menuOpen)
             {
                 _camera.Follow(Vector2.Zero, GraphicsDevice.Viewport);
@@ -471,6 +654,7 @@ namespace Survival_Story
                 selectControls = false;
                 selectExit = false;
                 selectExitControls = false;
+
                 if (!controlsOpen)
                 {
                     if (singleClick)
@@ -519,39 +703,19 @@ namespace Survival_Story
                 collectDrops();
                 colocarCasa();
                 actualizarHerramienta();
-                AnimalLogic(gameTime);
-                ToroLogic(gameTime);
+                ActualizarIAAnimal(gameTime, ref oveja);
+                ActualizarIAAnimal(gameTime, ref toro);
                 playerStats(gameTime);
                 timeDay(gameTime);
-                ProcesarAtaqueYDropAnimal(
-                    gameTime,
-                    "la oveja",
-                    ovejaPosition,
-                    64,
-                    64,
-                    ref ovejaState,
-                    ref ovejaHealth,
-                    ref ovejaHitCooldown,
-                    ref ovejaMoviendo
-                );
 
-                ProcesarAtaqueYDropAnimal(
-                    gameTime,
-                    "el toro",
-                    toroPosition,
-                    64,
-                    64,
-                    ref toroState,
-                    ref toroHealth,
-                    ref toroHitCooldown,
-                    ref toroMoviendo
-                );
+                ActualizarAtaqueAnimal(gameTime, ref oveja);
+                ActualizarAtaqueAnimal(gameTime, ref toro);
+
                 _camera.Follow(new Vector2(playerPosition.X + playerWidth / 2f, playerPosition.Y + playerHeight / 2f), GraphicsDevice.Viewport);
             }
             else if (isDead)
             {
                 _camera.Follow(new Vector2(playerPosition.X + playerWidth / 2f, playerPosition.Y + playerHeight / 2f), GraphicsDevice.Viewport);
-                // Al presionar Enter en la pantalla de muerte, reinicia estadísticas y vuelve al menú
                 if (_curKS.IsKeyDown(Keys.Enter) && _oldKS.IsKeyUp(Keys.Enter))
                 {
                     playerHealth = 100f;
@@ -563,8 +727,10 @@ namespace Survival_Story
                     menuOpen = true;
                 }
             }
+
             base.Update(gameTime);
         }
+
         private bool AgregarAlInventario(int itemID)
         {
             for (int i = 0; i < inventoryStorage.Length; i++)
@@ -578,6 +744,7 @@ namespace Survival_Story
             MostrarError("No tienes suficiente espacio");
             return false;
         }
+
         private void checkDropPickup(Rectangle playerHitbox, Vector2[] dropPos, Texture2D dropTex, int[] state, ref int count, int itemID)
         {
             for (int i = 0; i < dropPos.Length; i++)
@@ -604,34 +771,17 @@ namespace Survival_Story
                 }
             }
         }
-        private void checkMeatDrop(Rectangle playerHitbox, Vector2 dropPos, Texture2D dropTex, ref int state, ref int count, int itemID)
-        {
-            if (state == 2)
-            {
-                Rectangle dropHitbox = new Rectangle((int)dropPos.X, (int)dropPos.Y, dropTex.Width, dropTex.Height);
-                if (playerHitbox.Intersects(dropHitbox) && _curKS.IsKeyDown(Keys.Q))
-                {
-                    if (AgregarAlInventario(itemID))
-                    {
-                        state = 0;
-                        count++;
 
-                        if (itemID == 4)
-                            RegistrarAccion("Recogio carne");
-                    }
-                }
-            }
-        }
         private void collectDrops()
         {
             Rectangle playerHitbox = new Rectangle((int)playerPosition.X, (int)playerPosition.Y, playerWidth, playerHeight);
             checkDropPickup(playerHitbox, rockPosition, _rockDrop, rockState, ref rockCount, 2);
             checkDropPickup(playerHitbox, treePosition, _treeDrop, treeState, ref treeCount, 1);
             checkDropPickup(playerHitbox, sandPosition, _sandDrop, sandState, ref sandCount, 3);
-            checkMeatDrop(playerHitbox, ovejaPosition, _meatDrop, ref ovejaState, ref meatCount, 4);
-            checkMeatDrop(playerHitbox, toroPosition, _meatDrop, ref toroState, ref meatCount, 4);
-
+            RecogerDropAnimal(playerHitbox, ref oveja, ref meatCount);
+            RecogerDropAnimal(playerHitbox, ref toro, ref meatCount);
         }
+
         private void drawResource(Texture2D res, Texture2D resDrop, Vector2[] resPosition, int[] resState)
         {
             for (int i = 0; i < resPosition.Length; i++)
@@ -646,6 +796,7 @@ namespace Survival_Story
                 }
             }
         }
+
         protected override void Draw(GameTime gameTime)
         {
             GraphicsDevice.Clear(Color.CornflowerBlue);
@@ -653,6 +804,7 @@ namespace Survival_Story
             _spriteBatch.Draw(_map, mapPosition, null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.0f);
             drawResource(_rock, _rockDrop, rockPosition, rockState);
             drawResource(_sand, _sandDrop, sandPosition, sandState);
+
             for (int i = 0; i < treePosition.Length; i++)
             {
                 if (treeState[i] == 1)
@@ -665,79 +817,57 @@ namespace Survival_Story
                     _spriteBatch.Draw(_treeDrop, treePosition[i], null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.1f);
                 }
             }
+
             if (casaColocada)
             {
                 _spriteBatch.Draw(_casa, casaPosition, null, Color.White, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0.35f);
             }
-            Rectangle areaVision = Rectangle.Empty;
-            switch (UltimoMov)
-            {
-                case 0:
-                    areaVision = new Rectangle((int)ovejaPosition.X, (int)ovejaPosition.Y - Epos(1), Epos(3), Epos(3));
-                    break;
-                case 1:
-                    areaVision = new Rectangle((int)ovejaPosition.X - Epos(2), (int)ovejaPosition.Y - Epos(1), Epos(3), Epos(3));
-                    break;
-                case 2:
-                    areaVision = new Rectangle((int)ovejaPosition.X - Epos(1), (int)ovejaPosition.Y, Epos(3), Epos(3));
-                    break;
-                case 3:
-                    areaVision = new Rectangle((int)ovejaPosition.X - Epos(1), (int)ovejaPosition.Y - Epos(2), Epos(3), Epos(3));
-                    break;
-            }
-            Rectangle areaVisionToro = Rectangle.Empty;
-            switch (toroUltimoMov)
-            {
-                case 0:
-                    areaVisionToro = new Rectangle((int)toroPosition.X, (int)toroPosition.Y - Epos(1), Epos(3), Epos(3));
-                    break;
-                case 1:
-                    areaVisionToro = new Rectangle((int)toroPosition.X - Epos(2), (int)toroPosition.Y - Epos(1), Epos(3), Epos(3));
-                    break;
-                case 2:
-                    areaVisionToro = new Rectangle((int)toroPosition.X - Epos(1), (int)toroPosition.Y, Epos(3), Epos(3));
-                    break;
-                case 3:
-                    areaVisionToro = new Rectangle((int)toroPosition.X - Epos(1), (int)toroPosition.Y - Epos(2), Epos(3), Epos(3));
-                    break;
-            }
-            _spriteBatch.Draw(_pixel, areaVisionToro, null, new Color(255, 70, 70, 55), 0f, Vector2.Zero, SpriteEffects.None, 0.251f);
-            _spriteBatch.Draw(_pixel, areaVision, null, new Color(255, 220, 80, 45), 0f, Vector2.Zero, SpriteEffects.None, 0.25f);
-            int anchoOveja = _oveja.Width / 3;
-            int altoOveja = _oveja.Height / 8;
-            Rectangle ovejaSource = new Rectangle(
-                ovejaFrame * anchoOveja,
-                ovejaDireccionSprite * altoOveja,
-                anchoOveja,
-                altoOveja
-            );
-            DibujarAnimalYDrop(
-                _oveja,
-                ovejaPosition,
-                ovejaSource,
-                new Vector2(12, 7),
-                0.297f,
-                _meatDrop, // Reemplaza por la textura de drop de la oveja
-                ovejaState
-            );
 
-            int anchoToro = _toro.Width / 3;
-            int altoToro = _toro.Height / 4;
-            Rectangle toroSource = new Rectangle(
-                toroFrame * anchoToro,
-                toroDireccionSprite * altoToro,
-                anchoToro,
-                altoToro
-            );
-            DibujarAnimalYDrop(
-                _toro,
-                toroPosition,
-                toroSource,
-                new Vector2(2, 2),
-                0.296f,
-                _meatDrop, // Reemplaza por la textura de drop del toro
-                toroState
-            );
+            if (oveja.Estado == 1)
+            {
+                Rectangle areaVision = Rectangle.Empty;
+                switch (oveja.UltimoMov)
+                {
+                    case 0:
+                        areaVision = new Rectangle((int)oveja.Posicion.X, (int)oveja.Posicion.Y - Epos(1), Epos(3), Epos(3));
+                        break;
+                    case 1:
+                        areaVision = new Rectangle((int)oveja.Posicion.X - Epos(2), (int)oveja.Posicion.Y - Epos(1), Epos(3), Epos(3));
+                        break;
+                    case 2:
+                        areaVision = new Rectangle((int)oveja.Posicion.X - Epos(1), (int)oveja.Posicion.Y, Epos(3), Epos(3));
+                        break;
+                    case 3:
+                        areaVision = new Rectangle((int)oveja.Posicion.X - Epos(1), (int)oveja.Posicion.Y - Epos(2), Epos(3), Epos(3));
+                        break;
+                }
+                _spriteBatch.Draw(_pixel, areaVision, null, new Color(255, 220, 80, 45), 0f, Vector2.Zero, SpriteEffects.None, 0.25f);
+            }
+
+            if (toro.Estado == 1)
+            {
+                Rectangle areaVisionToro = Rectangle.Empty;
+                switch (toro.UltimoMov)
+                {
+                    case 0:
+                        areaVisionToro = new Rectangle((int)toro.Posicion.X, (int)toro.Posicion.Y - Epos(1), Epos(3), Epos(3));
+                        break;
+                    case 1:
+                        areaVisionToro = new Rectangle((int)toro.Posicion.X - Epos(2), (int)toro.Posicion.Y - Epos(1), Epos(3), Epos(3));
+                        break;
+                    case 2:
+                        areaVisionToro = new Rectangle((int)toro.Posicion.X - Epos(1), (int)toro.Posicion.Y, Epos(3), Epos(3));
+                        break;
+                    case 3:
+                        areaVisionToro = new Rectangle((int)toro.Posicion.X - Epos(1), (int)toro.Posicion.Y - Epos(2), Epos(3), Epos(3));
+                        break;
+                }
+                _spriteBatch.Draw(_pixel, areaVisionToro, null, new Color(255, 70, 70, 55), 0f, Vector2.Zero, SpriteEffects.None, 0.251f);
+            }
+
+            DibujarAnimal(oveja);
+            DibujarAnimal(toro);
+
             _spriteBatch.Draw(_player, playerPosition, playerRectangle[playerDirection, currentAnimationIndex], Color.White, 0.0f, Vector2.Zero, 2.0f, SpriteEffects.None, 0.298f);
             if (toolEquipped[0])
             {
@@ -752,6 +882,7 @@ namespace Survival_Story
                 _spriteBatch.Draw(_woodShovel, toolPosition, null, Color.White, 0.0f, Vector2.Zero, 0.3f, SpriteEffects.None, 0.299f);
             }
             _spriteBatch.End();
+
             _spriteBatch.Begin(SpriteSortMode.FrontToBack, BlendState.AlphaBlend, samplerState: SamplerState.PointClamp);
             Color colorDay = Color.Transparent;
             Color colorNight = new Color(10, 15, 45) * 0.75f;
@@ -760,6 +891,7 @@ namespace Survival_Story
             Color actualTime = Color.Lerp(colorDay, colorNight, nightIntensity);
             Rectangle fullScreen = new Rectangle(0, 0, GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height);
             _spriteBatch.Draw(_mapNight, fullScreen, null, actualTime, 0.0f, Vector2.Zero, SpriteEffects.None, 0.01f);
+
             if (_openInventory && !isDead)
             {
                 _spriteBatch.Draw(_inventory, new Vector2((GraphicsDevice.Viewport.Width / 2) - _inventory.Width / 2 * 7, (GraphicsDevice.Viewport.Height / 2) - _inventory.Height / 2 * 7), null, Color.White, 0.0f, Vector2.Zero, 7.0f, SpriteEffects.None, 0.8f);
@@ -783,6 +915,7 @@ namespace Survival_Story
                     }
                 }
             }
+
             _spriteBatch.DrawString(_font, "Ultima accion: " + ultimaAccion, new Vector2(20, 50), Color.White);
             if (_curKS.IsKeyDown(Keys.H))
             {
@@ -796,6 +929,7 @@ namespace Survival_Story
                     _spriteBatch.DrawString(_font, accion, new Vector2(630, espacioR), Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.99f);
                 }
             }
+
             if (tiempoError > 0)
             {
                 _spriteBatch.Draw(_error, new Vector2(20, 300), null, Color.White, 0f, Vector2.Zero, 1.1f, SpriteEffects.None, 0.98f);
@@ -804,6 +938,7 @@ namespace Survival_Story
                     _spriteBatch.DrawString(_font, mensaje, new Vector2(80, 325), Color.Red, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0.99f);
                 }
             }
+
             if (menuOpen)
             {
                 _spriteBatch.Draw(_menu, new Vector2(0, 0), null, Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.98f);
@@ -837,6 +972,7 @@ namespace Survival_Story
                     }
                 }
             }
+
             string statsText = $"Salud: {(int)playerHealth} | Hambre: {(int)playerHunger} | Energia: {(int)playerEnergy} | Moral: {playerMoral}";
             _spriteBatch.DrawString(_font, statsText, new Vector2(20, 20), Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.8f);
             string dayText = $"Dia: {currentDay}";
@@ -844,6 +980,7 @@ namespace Survival_Story
             float textX = GraphicsDevice.Viewport.Width - textSize.X - 20f;
             float textY = 20f;
             _spriteBatch.DrawString(_font, dayText, new Vector2(textX, textY), Color.White, 0.0f, Vector2.Zero, 1.0f, SpriteEffects.None, 0.8f);
+
             if (isDead)
             {
                 _spriteBatch.Draw(_pantmuerte, fullScreen, null, Color.White, 0.0f, Vector2.Zero, SpriteEffects.None, 1.0f);
@@ -851,6 +988,7 @@ namespace Survival_Story
             _spriteBatch.End();
             base.Draw(gameTime);
         }
+
         private void movementPlayer(GameTime gameTime)
         {
             movement = Vector2.Zero;
@@ -876,6 +1014,7 @@ namespace Survival_Story
             }
             animation(gameTime);
         }
+
         private void CheckCollisions(ref Vector2 playerPosition, ref Rectangle playerHitbox, Vector2[] objPosition, int[] objState, Texture2D obj, float movement, bool movementX)
         {
             for (int i = 0; i < objPosition.Length; i++)
@@ -899,6 +1038,7 @@ namespace Survival_Story
                 }
             }
         }
+
         private void collision(GameTime gameTime)
         {
             float delta = (float)gameTime.ElapsedGameTime.TotalSeconds;
@@ -917,6 +1057,7 @@ namespace Survival_Story
             CheckCollisions(ref playerPosition, ref playerHitboxY, treePosition, treeState, _bottomTree, movement.Y, false);
             CheckCollisions(ref playerPosition, ref playerHitboxY, sandPosition, sandState, _sand, movement.Y, false);
         }
+
         private void inventory()
         {
             if (_curKS.IsKeyDown(Keys.Tab) && _oldKS.IsKeyUp(Keys.Tab))
@@ -924,455 +1065,181 @@ namespace Survival_Story
                 _openInventory = !_openInventory;
             }
         }
-        private bool PuedeMoverOveja(Vector2 destino)
+
+        private bool PuedeMoverAnimal(Vector2 destino)
         {
-            Rectangle ovejaHitbox = new Rectangle((int)destino.X, (int)destino.Y, 64, 64);
+            Rectangle animalHitbox = new Rectangle((int)destino.X, (int)destino.Y, 64, 64);
             if (destino.X < 497 || destino.X > 2279 || destino.Y < 355 || destino.Y > 2137)
                 return false;
+
             for (int i = 0; i < rockPosition.Length; i++)
             {
                 if (rockState[i] == 1)
                 {
                     Rectangle obstaculo = new Rectangle((int)rockPosition[i].X, (int)rockPosition[i].Y, _rock.Width, _rock.Height);
-                    if (ovejaHitbox.Intersects(obstaculo)) return false;
+                    if (animalHitbox.Intersects(obstaculo)) return false;
                 }
             }
+
             for (int i = 0; i < treePosition.Length; i++)
             {
                 if (treeState[i] == 1)
                 {
                     Rectangle obstaculo = new Rectangle((int)treePosition[i].X, (int)treePosition[i].Y, _bottomTree.Width, _bottomTree.Height);
-                    if (ovejaHitbox.Intersects(obstaculo)) return false;
+                    if (animalHitbox.Intersects(obstaculo)) return false;
                 }
             }
+
             for (int i = 0; i < sandPosition.Length; i++)
             {
                 if (sandState[i] == 1)
                 {
                     Rectangle obstaculo = new Rectangle((int)sandPosition[i].X, (int)sandPosition[i].Y, _sand.Width, _sand.Height);
-                    if (ovejaHitbox.Intersects(obstaculo)) return false;
+                    if (animalHitbox.Intersects(obstaculo)) return false;
                 }
             }
+
             return true;
         }
-        private void AnimalLogic(GameTime gameTime)
+
+        private Vector2 ObtenerVectorDireccion(int dir)
         {
-            if (ovejaState != 1) return; // En AnimalLogic
-            float delta = (float)gameTime.ElapsedGameTime.TotalSeconds;
-            if (ovejaMoviendo)
+            return dir switch
             {
-                ovejaMoveTimer += delta;
-                ovejaAnimTimer += delta;
-                float progreso = MathHelper.Clamp(ovejaMoveTimer / ovejaMoveDuration, 0f, 1f);
-                ovejaPosition = Vector2.Lerp(ovejaInicio, ovejaDestino, progreso);
-                if (ovejaAnimTimer >= ovejaAnimSpeed)
+                0 => new Vector2(1, 0),
+                1 => new Vector2(-1, 0),
+                2 => new Vector2(0, 1),
+                3 => new Vector2(0, -1),
+                _ => Vector2.Zero
+            };
+        }
+
+        private void ActualizarIAAnimal(GameTime gameTime, ref AnimalData animal)
+        {
+            if (animal.Estado != 1)
+                return;
+
+            float delta = (float)gameTime.ElapsedGameTime.TotalSeconds;
+
+            if (animal.Moviendo)
+            {
+                animal.MoveTimer += delta;
+                animal.AnimTimer += delta;
+                float progreso = MathHelper.Clamp(animal.MoveTimer / animal.MoveDuration, 0f, 1f);
+                animal.Posicion = Vector2.Lerp(animal.Inicio, animal.Destino, progreso);
+
+                if (animal.AnimTimer >= animal.AnimSpeed)
                 {
-                    ovejaFrame = (ovejaFrame + 1) % 3;
-                    ovejaAnimTimer = 0f;
+                    animal.Frame = (animal.Frame + 1) % animal.ColumnasSprite;
+                    animal.AnimTimer = 0f;
                 }
+
                 if (progreso >= 1f)
                 {
-                    ovejaPosition = ovejaDestino;
-                    ovejaMoviendo = false;
-                    ovejaFrame = 1;
-                    _timer = 0f;
-                    _esperando = true;
-                    _delay = ovejaMovimientosHuir > 0 ? 0.2f : 1f;
+                    animal.Posicion = animal.Destino;
+                    animal.Moviendo = false;
+                    animal.Frame = 1;
+                    animal.Timer = 0f;
+                    animal.Esperando = true;
+                    animal.Delay = animal.MovimientosObjetivo > 0 ? 0.2f : 1f;
                 }
                 return;
             }
-            if (_esperando)
+
+            if (animal.Esperando)
             {
-                _timer += delta;
-                if (_timer < _delay)
+                animal.Timer += delta;
+                if (animal.Timer < animal.Delay)
                     return;
-                _esperando = false;
-                _timer = 0f;
+
+                animal.Esperando = false;
+                animal.Timer = 0f;
+
                 Point jugador = new Point((int)(playerPosition.X + playerWidth / 2), (int)(playerPosition.Y + playerHeight / 2));
-                Rectangle VisionDerecha = new Rectangle((int)ovejaPosition.X, (int)ovejaPosition.Y - Epos(1), Epos(3), Epos(3));
-                Rectangle VisionIzquierda = new Rectangle((int)ovejaPosition.X - Epos(2), (int)ovejaPosition.Y - Epos(1), Epos(3), Epos(3));
-                Rectangle VisionArriba = new Rectangle((int)ovejaPosition.X - Epos(1), (int)ovejaPosition.Y - Epos(2), Epos(3), Epos(3));
-                Rectangle VisionAbajo = new Rectangle((int)ovejaPosition.X - Epos(1), (int)ovejaPosition.Y, Epos(3), Epos(3));
-                bool vioDerecha = VisionDerecha.Contains(jugador) && UltimoMov == 0;
-                bool vioIzquierda = VisionIzquierda.Contains(jugador) && UltimoMov == 1;
-                bool vioArriba = VisionArriba.Contains(jugador) && UltimoMov == 3;
-                bool vioAbajo = VisionAbajo.Contains(jugador) && UltimoMov == 2;
+                Rectangle visionDerecha = new Rectangle((int)animal.Posicion.X, (int)animal.Posicion.Y - Epos(1), Epos(3), Epos(3));
+                Rectangle visionIzquierda = new Rectangle((int)animal.Posicion.X - Epos(2), (int)animal.Posicion.Y - Epos(1), Epos(3), Epos(3));
+                Rectangle visionArriba = new Rectangle((int)animal.Posicion.X - Epos(1), (int)animal.Posicion.Y - Epos(2), Epos(3), Epos(3));
+                Rectangle visionAbajo = new Rectangle((int)animal.Posicion.X - Epos(1), (int)animal.Posicion.Y, Epos(3), Epos(3));
+
+                bool vioDerecha = visionDerecha.Contains(jugador) && animal.UltimoMov == 0;
+                bool vioIzquierda = visionIzquierda.Contains(jugador) && animal.UltimoMov == 1;
+                bool vioAbajo = visionAbajo.Contains(jugador) && animal.UltimoMov == 2;
+                bool vioArriba = visionArriba.Contains(jugador) && animal.UltimoMov == 3;
+
                 if (vioDerecha)
                 {
-                    ovejaDireccionHuir = 1;
-                    ovejaMovimientosHuir = 11;
+                    animal.DireccionObjetivo = animal.HuyeDelJugador ? 1 : 0;
+                    animal.MovimientosObjetivo = 11;
                 }
                 else if (vioIzquierda)
                 {
-                    ovejaDireccionHuir = 0;
-                    ovejaMovimientosHuir = 11;
+                    animal.DireccionObjetivo = animal.HuyeDelJugador ? 0 : 1;
+                    animal.MovimientosObjetivo = 11;
                 }
                 else if (vioArriba)
                 {
-                    ovejaDireccionHuir = 2;
-                    ovejaMovimientosHuir = 11;
+                    animal.DireccionObjetivo = animal.HuyeDelJugador ? 2 : 3;
+                    animal.MovimientosObjetivo = 11;
                 }
                 else if (vioAbajo)
                 {
-                    ovejaDireccionHuir = 3;
-                    ovejaMovimientosHuir = 11;
+                    animal.DireccionObjetivo = animal.HuyeDelJugador ? 3 : 2;
+                    animal.MovimientosObjetivo = 11;
                 }
-                int mov;
-                bool ovejaHuyendo = ovejaMovimientosHuir > 0;
-                if (ovejaHuyendo && _random.Next(0, 100) < 70)
-                    mov = ovejaDireccionHuir;
-                else
-                    mov = _random.Next(0, 4);
-                ovejaMoveDuration = ovejaHuyendo ? 0.01f : 0.3f;
-                if (ovejaMovimientosHuir > 0)
-                    ovejaMovimientosHuir--;
-                Vector2 movimiento = Vector2.Zero;
-                switch (mov)
-                {
-                    case 0:
-                        movimiento = new Vector2(1, 0);
-                        UltimoMov = 0;
-                        ovejaDireccionSprite = 2;
-                        break;
-                    case 1:
-                        movimiento = new Vector2(-1, 0);
-                        UltimoMov = 1;
-                        ovejaDireccionSprite = 6;
-                        break;
-                    case 2:
-                        movimiento = new Vector2(0, 1);
-                        UltimoMov = 2;
-                        ovejaDireccionSprite = 0;
-                        break;
-                    case 3:
-                        movimiento = new Vector2(0, -1);
-                        UltimoMov = 3;
-                        ovejaDireccionSprite = 4;
-                        break;
-                }
-                Vector2 destinoPropuesto = ovejaPosition + movimiento * Epos(1);
-                if (!PuedeMoverOveja(destinoPropuesto))
+
+                bool persiguiendoOHuyendo = animal.MovimientosObjetivo > 0;
+                int mov = (persiguiendoOHuyendo && _random.Next(0, 100) < 70)
+                    ? animal.DireccionObjetivo
+                    : _random.Next(0, 4);
+
+                animal.MoveDuration = persiguiendoOHuyendo ? 0.01f : 0.3f;
+                if (animal.MovimientosObjetivo > 0)
+                    animal.MovimientosObjetivo--;
+
+                Vector2 movimiento = ObtenerVectorDireccion(mov);
+                animal.UltimoMov = mov;
+                animal.DireccionSprite = animal.FilasPorDireccion[mov];
+
+                Vector2 destinoPropuesto = animal.Posicion + movimiento * Epos(1);
+
+                if (!PuedeMoverAnimal(destinoPropuesto))
                 {
                     bool encontroCamino = false;
-                    int[] direcciones = { 0, 1, 2, 3 };
-                    direcciones = direcciones.OrderBy(x => _random.Next()).ToArray();
-                    foreach (int direccion in direcciones)
+                    int[] direccionesAlternativas = { 0, 1, 2, 3 };
+                    direccionesAlternativas = direccionesAlternativas.OrderBy(x => _random.Next()).ToArray();
+
+                    foreach (int direccion in direccionesAlternativas)
                     {
-                        Vector2 movimientoAlternativo = Vector2.Zero;
-                        switch (direccion)
+                        Vector2 destinoAlternativo = animal.Posicion + ObtenerVectorDireccion(direccion) * Epos(1);
+                        if (PuedeMoverAnimal(destinoAlternativo))
                         {
-                            case 0: movimientoAlternativo = new Vector2(1, 0); break;
-                            case 1: movimientoAlternativo = new Vector2(-1, 0); break;
-                            case 2: movimientoAlternativo = new Vector2(0, 1); break;
-                            case 3: movimientoAlternativo = new Vector2(0, -1); break;
-                        }
-                        Vector2 destinoAlternativo = ovejaPosition + movimientoAlternativo * Epos(1);
-                        if (PuedeMoverOveja(destinoAlternativo))
-                        {
-                            movimiento = movimientoAlternativo;
                             destinoPropuesto = destinoAlternativo;
+                            animal.UltimoMov = direccion;
+                            animal.DireccionSprite = animal.FilasPorDireccion[direccion];
                             encontroCamino = true;
-                            switch (direccion)
-                            {
-                                case 0: UltimoMov = 0; ovejaDireccionSprite = 2; break;
-                                case 1: UltimoMov = 1; ovejaDireccionSprite = 6; break;
-                                case 2: UltimoMov = 2; ovejaDireccionSprite = 0; break;
-                                case 3: UltimoMov = 3; ovejaDireccionSprite = 4; break;
-                            }
                             break;
                         }
                     }
+
                     if (!encontroCamino)
                     {
-                        ovejaFrame = 1;
-                        _timer = 0f;
-                        _esperando = true;
-                        _delay = 0.5f;
+                        animal.Frame = 1;
+                        animal.Timer = 0f;
+                        animal.Esperando = true;
+                        animal.Delay = 0.5f;
                         return;
                     }
                 }
-                ovejaInicio = ovejaPosition;
-                ovejaDestino = destinoPropuesto;
-                ovejaMoveTimer = 0f;
-                ovejaAnimTimer = 0f;
-                ovejaFrame = 0;
-                ovejaMoviendo = true;
-            }
-        }
-        private bool PuedeMoverToro(Vector2 destino)
-        {
-            Rectangle toroHitbox = new Rectangle((int)destino.X, (int)destino.Y, 64, 64);
-            if (destino.X < 497 || destino.X > 2279 || destino.Y < 355 || destino.Y > 2137)
-                return false;
-            for (int i = 0; i < rockPosition.Length; i++)
-            {
-                if (rockState[i] == 1)
-                {
-                    Rectangle obstaculo = new Rectangle((int)rockPosition[i].X, (int)rockPosition[i].Y, _rock.Width, _rock.Height);
-                    if (toroHitbox.Intersects(obstaculo)) return false;
-                }
-            }
-            for (int i = 0; i < treePosition.Length; i++)
-            {
-                if (treeState[i] == 1)
-                {
-                    Rectangle obstaculo = new Rectangle((int)treePosition[i].X, (int)treePosition[i].Y, _bottomTree.Width, _bottomTree.Height);
-                    if (toroHitbox.Intersects(obstaculo)) return false;
-                }
-            }
-            for (int i = 0; i < sandPosition.Length; i++)
-            {
-                if (sandState[i] == 1)
-                {
-                    Rectangle obstaculo = new Rectangle((int)sandPosition[i].X, (int)sandPosition[i].Y, _sand.Width, _sand.Height);
-                    if (toroHitbox.Intersects(obstaculo)) return false;
-                }
-            }
-            return true;
-        }
-        private void ToroLogic(GameTime gameTime)
-        {
-            float delta = (float)gameTime.ElapsedGameTime.TotalSeconds;
-            if (toroState != 1) return;
-            if (toroMoviendo)
-            {
-                toroMoveTimer += delta;
-                toroAnimTimer += delta;
-                float progreso = MathHelper.Clamp(toroMoveTimer / toroMoveDuration, 0f, 1f);
-                toroPosition = Vector2.Lerp(toroInicio, toroDestino, progreso);
-                if (toroAnimTimer >= toroAnimSpeed)
-                {
-                    toroFrame = (toroFrame + 1) % 3;
-                    toroAnimTimer = 0f;
-                }
-                if (progreso >= 1f)
-                {
-                    toroPosition = toroDestino;
-                    toroMoviendo = false;
-                    toroFrame = 1;
-                    toroTimer = 0f;
-                    toroEsperando = true;
-                    toroDelay = toroMovimientosAcercarse > 0 ? 0.2f : 1f;
-                }
-                return;
-            }
-            if (toroEsperando)
-            {
-                toroTimer += delta;
-                if (toroTimer < toroDelay)
-                    return;
-                toroEsperando = false;
-                toroTimer = 0f;
-                Point jugador = new Point((int)(playerPosition.X + playerWidth / 2), (int)(playerPosition.Y + playerHeight / 2));
-                Rectangle VisionDerecha = new Rectangle((int)toroPosition.X, (int)toroPosition.Y - Epos(1), Epos(3), Epos(3));
-                Rectangle VisionIzquierda = new Rectangle((int)toroPosition.X - Epos(2), (int)toroPosition.Y - Epos(1), Epos(3), Epos(3));
-                Rectangle VisionArriba = new Rectangle((int)toroPosition.X - Epos(1), (int)toroPosition.Y - Epos(2), Epos(3), Epos(3));
-                Rectangle VisionAbajo = new Rectangle((int)toroPosition.X - Epos(1), (int)toroPosition.Y, Epos(3), Epos(3));
-                bool vioDerecha = VisionDerecha.Contains(jugador) && toroUltimoMov == 0;
-                bool vioIzquierda = VisionIzquierda.Contains(jugador) && toroUltimoMov == 1;
-                bool vioArriba = VisionArriba.Contains(jugador) && toroUltimoMov == 3;
-                bool vioAbajo = VisionAbajo.Contains(jugador) && toroUltimoMov == 2;
-                if (vioDerecha)
-                {
-                    toroDireccionAcercarse = 0;
-                    toroMovimientosAcercarse = 11;
-                }
-                else if (vioIzquierda)
-                {
-                    toroDireccionAcercarse = 1;
-                    toroMovimientosAcercarse = 11;
-                }
-                else if (vioArriba)
-                {
-                    toroDireccionAcercarse = 3;
-                    toroMovimientosAcercarse = 11;
-                }
-                else if (vioAbajo)
-                {
-                    toroDireccionAcercarse = 2;
-                    toroMovimientosAcercarse = 11;
-                }
-                int mov;
-                bool toroAcercandose = toroMovimientosAcercarse > 0;
-                if (toroAcercandose && _random.Next(0, 100) < 70)
-                    mov = toroDireccionAcercarse;
-                else
-                    mov = _random.Next(0, 4);
-                toroMoveDuration = toroAcercandose ? 0.01f : 0.3f;
-                if (toroMovimientosAcercarse > 0)
-                    toroMovimientosAcercarse--;
-                Vector2 movimiento = Vector2.Zero;
-                switch (mov)
-                {
-                    case 0:
-                        movimiento = new Vector2(1, 0);
-                        toroUltimoMov = 0;
-                        toroDireccionSprite = 1;
-                        break;
-                    case 1:
-                        movimiento = new Vector2(-1, 0);
-                        toroUltimoMov = 1;
-                        toroDireccionSprite = 3;
-                        break;
-                    case 2:
-                        movimiento = new Vector2(0, 1);
-                        toroUltimoMov = 2;
-                        toroDireccionSprite = 0;
-                        break;
-                    case 3:
-                        movimiento = new Vector2(0, -1);
-                        toroUltimoMov = 3;
-                        toroDireccionSprite = 2;
-                        break;
-                }
-                Vector2 destinoPropuesto = toroPosition + movimiento * Epos(1);
-                if (!PuedeMoverToro(destinoPropuesto))
-                {
-                    bool encontroCamino = false;
-                    int[] direcciones = { 0, 1, 2, 3 };
-                    direcciones = direcciones.OrderBy(x => _random.Next()).ToArray();
-                    foreach (int direccion in direcciones)
-                    {
-                        Vector2 movimientoAlternativo = Vector2.Zero;
-                        switch (direccion)
-                        {
-                            case 0: movimientoAlternativo = new Vector2(1, 0); break;
-                            case 1: movimientoAlternativo = new Vector2(-1, 0); break;
-                            case 2: movimientoAlternativo = new Vector2(0, 1); break;
-                            case 3: movimientoAlternativo = new Vector2(0, -1); break;
-                        }
-                        Vector2 destinoAlternativo = toroPosition + movimientoAlternativo * Epos(1);
-                        if (PuedeMoverToro(destinoAlternativo))
-                        {
-                            movimiento = movimientoAlternativo;
-                            destinoPropuesto = destinoAlternativo;
-                            encontroCamino = true;
-                            switch (direccion)
-                            {
-                                case 0: toroUltimoMov = 0; toroDireccionSprite = 1; break;
-                                case 1: toroUltimoMov = 1; toroDireccionSprite = 3; break;
-                                case 2: toroUltimoMov = 2; toroDireccionSprite = 0; break;
-                                case 3: toroUltimoMov = 3; toroDireccionSprite = 2; break;
-                            }
-                            break;
-                        }
-                    }
-                    if (!encontroCamino)
-                    {
-                        toroFrame = 1;
-                        toroTimer = 0f;
-                        toroEsperando = true;
-                        toroDelay = 0.5f;
-                        return;
-                    }
-                }
-                toroInicio = toroPosition;
-                toroDestino = destinoPropuesto;
-                toroMoveTimer = 0f;
-                toroAnimTimer = 0f;
-                toroFrame = 0;
-                toroMoviendo = true;
+
+                animal.Inicio = animal.Posicion;
+                animal.Destino = destinoPropuesto;
+                animal.MoveTimer = 0f;
+                animal.AnimTimer = 0f;
+                animal.Frame = 0;
+                animal.Moviendo = true;
             }
         }
 
-        private void ProcesarAtaqueYDropAnimal(
-            GameTime gameTime,
-            string nombreAnimal,
-            Vector2 posicionAnimal,
-            int anchoHitbox,
-            int altoHitbox,
-            ref int estadoAnimal,
-            ref int vidaAnimal,
-            ref float cooldownGolpe,
-            ref bool animalMoviendo)
-        {
-            if (estadoAnimal != 1)
-                return;
-
-            float delta = (float)gameTime.ElapsedGameTime.TotalSeconds;
-            if (cooldownGolpe > 0f)
-                cooldownGolpe -= delta;
-
-            // Golpear con el hacha equipada (toolEquipped[1])
-            if (toolEquipped[1] && cooldownGolpe <= 0f)
-            {
-                bool ataco = _curMS.LeftButton == ButtonState.Pressed ||
-                            (_curKS.IsKeyDown(Keys.E) && _oldKS.IsKeyUp(Keys.E));
-
-                if (ataco)
-                {
-                    Rectangle alcanceHacha = new Rectangle(
-                        (int)playerPosition.X - 24,
-                        (int)playerPosition.Y - 24,
-                        playerWidth + 48,
-                        playerHeight + 48
-                    );
-
-                    Rectangle hitboxAnimal = new Rectangle(
-                        (int)posicionAnimal.X,
-                        (int)posicionAnimal.Y,
-                        anchoHitbox,
-                        altoHitbox
-                    );
-
-                    if (alcanceHacha.Intersects(hitboxAnimal))
-                    {
-                        vidaAnimal--;
-                        cooldownGolpe = 0.35f;
-
-                        if (vidaAnimal <= 0)
-                        {
-                            estadoAnimal = 2; // Deja _meatDrop en el suelo
-                            animalMoviendo = false;
-                            RegistrarAccion($"Mato a {nombreAnimal}");
-                        }
-                        else
-                        {
-                            RegistrarAccion($"Golpeo a {nombreAnimal}");
-                        }
-                    }
-                }
-            }
-        }
-
-        private void DibujarAnimalYDrop(
-            Texture2D spriteAnimal,
-            Vector2 posicionAnimal,
-            Rectangle sourceRectAnimal,
-            Vector2 offsetVisual,
-            float layerDepthAnimal,
-            Texture2D texturaDrop,
-            int estadoAnimal)
-        {
-            if (estadoAnimal == 1)
-            {
-                _spriteBatch.Draw(
-                    spriteAnimal,
-                    posicionAnimal + offsetVisual,
-                    sourceRectAnimal,
-                    Color.White,
-                    0f,
-                    Vector2.Zero,
-                    1f,
-                    SpriteEffects.None,
-                    layerDepthAnimal
-                );
-            }
-            else if (estadoAnimal == 2 && texturaDrop != null)
-            {
-                _spriteBatch.Draw(
-                    texturaDrop,
-                    posicionAnimal + offsetVisual,
-                    null,
-                    Color.White,
-                    0f,
-                    Vector2.Zero,
-                    1f,
-                    SpriteEffects.None,
-                    0.1f
-                );
-            }
-        }
         private int checkResource(ref Vector2 playerCenter, Vector2[] objPosition, Texture2D obj, int[] objState, bool herramientaCorrecta)
         {
             for (int i = 0; i < objPosition.Length; i++)
@@ -1393,6 +1260,7 @@ namespace Survival_Story
             }
             return 0;
         }
+
         private void colocarCasa()
         {
             if (_curKS.IsKeyDown(Keys.C) && _oldKS.IsKeyUp(Keys.C))
@@ -1443,6 +1311,7 @@ namespace Survival_Story
                 RegistrarAccion("Construyo casa");
             }
         }
+
         private void interact()
         {
             Vector2 playerCenter = new Vector2(playerPosition.X + (playerWidth / 2f), playerPosition.Y + (playerHeight / 2f));
@@ -1494,6 +1363,7 @@ namespace Survival_Story
                 }
             }
         }
+
         private void MostrarError(string mensaje)
         {
             mensajesError.Add(mensaje);
@@ -1503,6 +1373,7 @@ namespace Survival_Story
                 mensajesError.RemoveAt(0);
             }
         }
+
         private void animation(GameTime gameTime)
         {
             playerTimer += (float)gameTime.ElapsedGameTime.TotalMilliseconds;
@@ -1520,11 +1391,13 @@ namespace Survival_Story
                 playerTimer -= threshold;
             }
         }
+
         private void RegistrarAccion(string accion)
         {
             historialAcciones.Push(accion);
             ultimaAccion = accion;
         }
+
         private void actualizarHerramienta()
         {
             switch (playerDirection)
