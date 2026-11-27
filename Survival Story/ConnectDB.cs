@@ -57,6 +57,39 @@ namespace Entradas //Código sin uso, modificar y copiar para las distintas tabl
             public float time_day { get; set; }
         }
 
+        public struct resources
+        {
+            public int id { get; set; }
+            public string name { get; set; }
+            public string terrain { get; set; }
+        }
+
+        public struct mapResources
+        {
+            public int id { get; set; }
+            public int id_resources { get; set; }
+            public int id_session { get; set; }
+            public int axisX { get; set; }
+            public int axisY { get; set; }
+            public int active { get; set; }
+        }
+
+        public struct animals
+        {
+            public int id { get; set; }
+            public string name { get; set; }
+            public string terrain { get; set; }
+        }
+
+        public struct mapAnimals
+        {
+            public int id { get; set; }
+            public int id_animals { get; set; }
+            public int id_session { get; set; }
+            public int axisX { get; set; }
+            public int axisY { get; set; }
+            public int active { get; set; }
+        }
 
         public static bool tablaVacia(string nombreTabla)
         {
@@ -196,6 +229,61 @@ namespace Entradas //Código sin uso, modificar y copiar para las distintas tabl
             }
         }
 
+        public static void mapResources(mapResources data)
+        {
+            string updateQuery = @"
+                UPDATE mapResources
+                SET = axisX = @axisX,
+                      axisY = @axisY,
+                      active = @active
+                WHERE id_session = @id_session;";
+
+            string insertQuery = @"
+                INSERT INTO mapResources (id_resources, id_session, axisX, axisY, active)
+                VALUES (@id_resources,@id_session, @axisX, @axisY, @active);";
+
+            try
+            {
+                using (MySqlConnection conexion = new MySqlConnection(stringConexion))
+                {
+                    conexion.Open();
+
+                    using (MySqlCommand updateCmd = new MySqlCommand(updateQuery, conexion))
+                    {
+                        updateCmd.Parameters.AddWithValue("@id_resources", data.id_resources);
+                        updateCmd.Parameters.AddWithValue("@id_session", data.id_session);
+                        updateCmd.Parameters.AddWithValue("@axisX", data.axisX);
+                        updateCmd.Parameters.AddWithValue("@axisY", data.axisY);
+                        updateCmd.Parameters.AddWithValue("@active", data.active);
+
+                        int datos = updateCmd.ExecuteNonQuery();
+
+                        if (datos == 0)
+                        {
+                            using (MySqlCommand insertCmd = new MySqlCommand(insertQuery, conexion))
+                            {
+                                updateCmd.Parameters.AddWithValue("@id_resources", data.id_resources);
+                                updateCmd.Parameters.AddWithValue("@id_session", data.id_session);
+                                updateCmd.Parameters.AddWithValue("@axisX", data.axisX);
+                                updateCmd.Parameters.AddWithValue("@axisY", data.axisY);
+                                updateCmd.Parameters.AddWithValue("@active", data.active);
+
+                                insertCmd.ExecuteNonQuery();
+                                System.Diagnostics.Debug.WriteLine($"Inserción de recursos a la base de datos.");
+                                return;
+                            }
+                        }
+
+                        System.Diagnostics.Debug.WriteLine($"Actualización de recursos en la base de datos.");
+                    }
+                }
+            }
+            catch (MySqlException ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error MySQL en Sesion ({ex.Number}): {ex.Message}");
+            }
+        }
+
         public static void playerState(playerStateData session)
         {
             // 1. Se quitó la coma después de @moral
@@ -253,6 +341,7 @@ namespace Entradas //Código sin uso, modificar y copiar para las distintas tabl
                 System.Diagnostics.Debug.WriteLine($"Error MySQL en Sesion ({ex.Number}): {ex.Message}");
             }
         }
+
         public static void sesionResult(sesionResultData result)
         {
             string updateQuery = @"
@@ -333,10 +422,6 @@ namespace Entradas //Código sin uso, modificar y copiar para las distintas tabl
                 System.Diagnostics.Debug.WriteLine($"Error MySQL en actionLogs ({ex.Number}): {ex.Message}");
             }
         }
-
-
-
-
 
         public static playerData? CargarJugador(string nombre)
         {
@@ -422,6 +507,7 @@ namespace Entradas //Código sin uso, modificar y copiar para las distintas tabl
 
             return null;
         }
+
         public static playerStateData? CargarEstadoJugador(int idSession)
         {
             string selectQuery = @"
@@ -466,11 +552,13 @@ namespace Entradas //Código sin uso, modificar y copiar para las distintas tabl
             return null;
         }
 
-        /*
-        public static void InsertarPlayerStateLog(int idSession, int health, int energy, int hunger, string moral)
+        public static mapResources? CargarMapaRecursos(int id_session)
         {
-            string query = "INSERT INTO playerStateLog (id_session, health, energy, hunger, moral) " +
-                        "VALUES (@id_session, @health, @energy, @hunger, @moral)";
+            string selectQuery = @"
+            SELECT axisX, axisY, active
+            FROM mapresources
+            WHERE id_session = @id_session
+            LIMIT 1;";
 
             try
             {
@@ -478,321 +566,36 @@ namespace Entradas //Código sin uso, modificar y copiar para las distintas tabl
                 {
                     conexion.Open();
 
-                    using (MySqlCommand comando = new MySqlCommand(query, conexion))
+                    using (MySqlCommand cmd = new MySqlCommand(selectQuery, conexion))
                     {
-                        comando.Parameters.AddWithValue("@id_session", idSession);
-                        comando.Parameters.AddWithValue("@health", health);
-                        comando.Parameters.AddWithValue("@energy", energy);
-                        comando.Parameters.AddWithValue("@hunger", hunger);
-                        comando.Parameters.AddWithValue("@moral", moral);
+                        cmd.Parameters.AddWithValue("@id_session", idSession);
 
-                        comando.ExecuteNonQuery();
-                    }
-                }
-            }
-            catch (MySqlException ex)
-            {
-                System.Diagnostics.Debug.WriteLine("Error al guardar estado: " + ex.Message);
-            }
-        }
-        public static void InsertarSesionResult(int idSession, int totalDays, int remainResources, int score)
-        {
-            string query = "INSERT INTO sesionResult (id_session, total_days, remain_resources, score) " +
-                        "VALUES (@id_session, @total_days, @remain_resources, @score)";
-
-            try
-            {
-                using (MySqlConnection conexion = new MySqlConnection(stringConexion))
-                {
-                    conexion.Open();
-
-                    using (MySqlCommand comando = new MySqlCommand(query, conexion))
-                    {
-                        comando.Parameters.AddWithValue("@id_session", idSession);
-                        comando.Parameters.AddWithValue("@total_days", totalDays);
-                        comando.Parameters.AddWithValue("@remain_resources", remainResources);
-                        comando.Parameters.AddWithValue("@score", score);
-
-                        comando.ExecuteNonQuery();
-                    }
-                }
-            }
-            catch (MySqlException ex)
-            {
-                System.Diagnostics.Debug.WriteLine("Error al guardar resultado: " + ex.Message);
-            }
-        }
-        public static void InsertarActionLog(int idSession, int idActionTypes, int day, string result)
-        {
-            string query = "INSERT INTO actionLogs (id_session, id_actionTypes, day, result) " +
-                        "VALUES (@id_session, @id_actionTypes, @day, @result)";
-
-            try
-            {
-                using (MySqlConnection conexion = new MySqlConnection(stringConexion))
-                {
-                    conexion.Open();
-
-                    using (MySqlCommand comando = new MySqlCommand(query, conexion))
-                    {
-                        comando.Parameters.AddWithValue("@id_session", idSession);
-                        comando.Parameters.AddWithValue("@id_actionTypes", idActionTypes);
-                        comando.Parameters.AddWithValue("@day", day);
-                        comando.Parameters.AddWithValue("@result", result);
-
-                        comando.ExecuteNonQuery();
-                    }
-                }
-            }
-            catch (MySqlException ex)
-            {
-                System.Diagnostics.Debug.WriteLine("Error al guardar acción: " + ex.Message);
-            }
-        }
-
-        //Selecs
-        public static DataTable SelectPlayerStateLog(int idSession)
-        {
-            string query = "SELECT * FROM playerStateLog WHERE id_session = @id_session";
-
-            DataTable tabla = new DataTable();
-
-            try
-            {
-                using (MySqlConnection conexion = new MySqlConnection(stringConexion))
-                {
-                    conexion.Open();
-
-                    using (MySqlCommand comando = new MySqlCommand(query, conexion))
-                    {
-                        comando.Parameters.AddWithValue("@id_session", idSession);
-
-                        using (MySqlDataAdapter adaptador = new MySqlDataAdapter(comando))
+                        using (MySqlDataReader reader = cmd.ExecuteReader())
                         {
-                            adaptador.Fill(tabla);
-                        }
-                    }
-                }
-            }
-            catch (MySqlException ex)
-            {
-                System.Diagnostics.Debug.WriteLine("Error al consultar playerStateLog: " + ex.Message);
-            }
-
-            return tabla;
-        }
-        public static DataTable SelectSesionResult(int idSession)
-        {
-            string query = "SELECT * FROM sesionResult WHERE id_session = @id_session";
-
-            DataTable tabla = new DataTable();
-
-            try
-            {
-                using (MySqlConnection conexion = new MySqlConnection(stringConexion))
-                {
-                    conexion.Open();
-
-                    using (MySqlCommand comando = new MySqlCommand(query, conexion))
-                    {
-                        comando.Parameters.AddWithValue("@id_session", idSession);
-
-                        using (MySqlDataAdapter adaptador = new MySqlDataAdapter(comando))
-                        {
-                            adaptador.Fill(tabla);
-                        }
-                    }
-                }
-            }
-            catch (MySqlException ex)
-            {
-                System.Diagnostics.Debug.WriteLine("Error al consultar sesionResult: " + ex.Message);
-            }
-
-            return tabla;
-        }
-        public static DataTable SelectActionLogs(int idSession)
-        {
-            string query = "SELECT * FROM actionLogs WHERE id_session = @id_session";
-
-            DataTable tabla = new DataTable();
-
-            try
-            {
-                using (MySqlConnection conexion = new MySqlConnection(stringConexion))
-                {
-                    conexion.Open();
-
-                    using (MySqlCommand comando = new MySqlCommand(query, conexion))
-                    {
-                        comando.Parameters.AddWithValue("@id_session", idSession);
-
-                        using (MySqlDataAdapter adaptador = new MySqlDataAdapter(comando))
-                        {
-                            adaptador.Fill(tabla);
-                        }
-                    }
-                }
-            }
-            catch (MySqlException ex)
-            {
-                System.Diagnostics.Debug.WriteLine("Error al consultar actionLogs: " + ex.Message);
-            }
-
-            return tabla;
-        }
-
-        //El delete
-        public static void EliminarDatabase()
-        {
-            string query = "DROP DATABASE supervival";
-
-            try
-            {
-                using (MySqlConnection conexion = new MySqlConnection(stringConexion))
-                {
-                    conexion.Open();
-
-                    using (MySqlCommand comando = new MySqlCommand(query, conexion))
-                    {
-                        comando.ExecuteNonQuery();
-                        System.Diagnostics.Debug.WriteLine("Base de datos eliminada correctamente.");
-                    }
-                }
-            }
-            catch (MySqlException ex)
-            {
-                System.Diagnostics.Debug.WriteLine("Error al eliminar la base de datos: " + ex.Message);
-            }
-        }
-
-    }
-
-
-
-    /*
-    
-    public static void ConsultarElemento(int id)
-    {
-        string query = "SELECT * FROM resources " +
-                       "WHERE id = @id";
-        try
-        {
-            using (MySqlConnection conexion = new MySqlConnection(stringConexion))
-            {
-                conexion.Open();
-                using (MySqlCommand comando = new MySqlCommand(query, conexion))
-                {
-                    comando.Parameters.AddWithValue("@id", id);
-                    using(MySqlDataReader lector = comando.ExecuteReader())
-                    {
-                        if(lector.HasRows)
-                        {
-                            while(lector.Read())
+                            if (reader.Read())
                             {
-                                int resourceId = lector.GetInt32("id");
-                                string nombre = lector.GetString("nombre");
-                                System.Diagnostics.Debug.WriteLine($"Id: {resourceId}, Nombre: {nombre}");
+                                return new mapResources
+                                {
+                                    id = reader.GetInt32("id"),
+                                    id_resources = reader.GetInt32("id_resources"),
+                                    id_session = reader.GetInt32("id_session"),
+                                    axisX = reader.GetInt32("axisX"),
+                                    axisY = reader.GetInt32("axisY"),
+                                    active = reader.GetInt32("active")
+                                };
                             }
                         }
                     }
                 }
             }
-        }
-        catch (MySqlException ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error. {ex.Message}");
-        }
-    }
-
-    public static (float x, float y, int dia) CargarPartida(int jugadorId)
-    {
-        string query = "SELECT player_x, player_y, current_day FROM player_save WHERE id = @id;";
-
-    // Valores por defecto por si la consulta no devuelve nada
-        float x = 10 * 71; // Tu posición inicial por defecto
-        float y = 10 * 71;
-        int dia = 1;
-
-        try
-        {
-            using (MySqlConnection conexion = new MySqlConnection(stringConexion))
+            catch (MySqlException ex)
             {
-                conexion.Open();
-                using (MySqlCommand comando = new MySqlCommand(query, conexion))
-                {
-                    comando.Parameters.AddWithValue("@id", jugadorId);
-                    using (MySqlDataReader lector = comando.ExecuteReader())
-                    {
-                        if (lector.HasRows && lector.Read())
-                        {
-                            x = lector.GetFloat("player_x");
-                            y = lector.GetFloat("player_y");
-                            dia = lector.GetInt32("current_day");
-                            System.Diagnostics.Debug.WriteLine("Datos de partida cargados desde la BD.");
-                        }
-                    }
-                }
+                System.Diagnostics.Debug.WriteLine($"Error MySQL en CargarEstadoJugador ({ex.Number}): {ex.Message}");
             }
+
+            return null;
         }
-        catch (MySqlException ex)
-        {
-            System.Diagnostics.Debug.WriteLine("Error al cargar partida: " + ex.Message);
-        }
-
-        return (x, y, dia);
-    }*/
-        /*
-        var recurso = ConnectDB.AsignarVariablesRecurso(5);
-        string nombre = recurso.nombre;
-        int cantidad = recurso.cantidad;
-         */
-
-
-
-
-        /*
-         // Modificamos el método para que devuelva un Tuple (varios valores a la vez) o podés usar una clase propia
-    public static (string nombre, int cantidad) AsignarVariablesRecurso(int id)
-    {
-        string query = "SELECT nombre, cantidad FROM resources WHERE id = @id";
-
-        // Variables locales listas para recibir los valores de la consulta
-        string nombreAsignado = "No encontrado";
-        int cantidadAsignada = 0;
-
-        try
-        {
-            using (MySqlConnection conexion = new MySqlConnection(stringConexion))
-            {
-                conexion.Open();
-                using (MySqlCommand comando = new MySqlCommand(query, conexion))
-                {
-                    comando.Parameters.AddWithValue("@id", id);
-                    using (MySqlDataReader lector = comando.ExecuteReader())
-                    {
-                        if (lector.HasRows && lector.Read())
-                        {
-                            // ACÁ SE ASIGNAN LOS VALORES A LAS VARIABLES
-                            nombreAsignado = lector.GetString("nombre");
-                            cantidadAsignada = lector.GetInt32("cantidad");
-                        }
-                    }
-                }
-            }
-        }
-        catch (MySqlException ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"Error: {ex.Message}");
-        }
-
-        // Retornamos las variables con los valores asignados
-        return (nombreAsignado, cantidadAsignada);
-    }
-
-        var recurso = ConnectDB.AsignarVariablesRecurso(5);
-        string nombre = recurso.nombre;
-        int cantidad = recurso.cantidad;
-         */
     }
 }
+
+        
