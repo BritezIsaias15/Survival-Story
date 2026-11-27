@@ -1,94 +1,91 @@
 using System;
-using System.Diagnostics;
+using System.Collections.Generic;
 using System.Linq;
-using Entradas;
-using Microsoft.VisualBasic;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-using System.Collections.Generic;
-using System.Configuration;
-
-public class Camera2D
-{
-    public Matrix Transform { get; private set; }
-    public Vector2 Position { get; set; }
-
-    private GraphicsDevice _graphicsDevice;
-
-    public Camera2D(GraphicsDevice graphicsDevice)
-    {
-        _graphicsDevice = graphicsDevice;
-        Position = Vector2.Zero;
-    }
-
-    public void Follow(Vector2 targetPosition, Viewport viewport)
-    {
-        Position = new Vector2(
-            targetPosition.X - viewport.Width / 2f,
-            targetPosition.Y - viewport.Height / 2f
-        );
-
-        Transform = Matrix.CreateTranslation(new Vector3(-Position, 0));
-    }
-}
+using Entradas;
 
 namespace Survival_Story
 {
+    // [INICIO BASE GAME1 - ANIMALDATA]
     public struct AnimalData
     {
         public string Nombre;
         public Vector2 Posicion;
-        public Vector2 Inicio;
-        public Vector2 Destino;
-
-        // 1 = vivo, 2 = drop en el suelo, 0 = recogido
         public int Estado;
         public int Vida;
-        public float HitCooldown;
-
-        public int UltimoMov;
         public bool Esperando;
-        public float Timer;
         public float Delay;
-
+        public float Timer;
         public int Frame;
-        public int DireccionSprite;
-        public float AnimTimer;
         public float AnimSpeed;
-
-        public bool Moviendo;
-        public float MoveTimer;
+        public float AnimTimer;
         public float MoveDuration;
+        public float MoveTimer;
+        public bool Moviendo;
+        public Vector2 Inicio;
+        public Vector2 Destino;
+        public bool HuyeDelJugador;
+        public int UltimoMov;
         public int DireccionObjetivo;
         public int MovimientosObjetivo;
-
-        public bool HuyeDelJugador;
-        public int[] FilasPorDireccion; // [derecha, izquierda, abajo, arriba]
-
-        public Texture2D SpriteSheet;
-        public Texture2D DropTexture;
+        public int DireccionSprite;
+        public int[] FilasPorDireccion;
         public Vector2 OffsetVisual;
         public float LayerDepth;
         public int ColumnasSprite;
         public int FilasSprite;
         public int DropItemId;
+        public float HitCooldown;
+        public Texture2D SpriteSheet;
+        public Texture2D DropTexture;
     }
+    // [FIN BASE GAME1 - ANIMALDATA]
 
     public class Game1 : Game
     {
+        // [INICIO BASE GAME1 - CAMPOS Y TEXTURAS]
         private GraphicsDeviceManager _graphics;
         private SpriteBatch _spriteBatch;
+        private Texture2D _pixel;
+        private Texture2D _player;
+        private Texture2D _rock;
+        private Texture2D _rockDrop;
+        private Texture2D _sand;
+        private Texture2D _sandDrop;
+        private Texture2D _topTree;
+        private Texture2D _bottomTree;
+        private Texture2D _treeDrop;
+        private Texture2D _map;
+        private Texture2D _inventory;
+        private Texture2D _menu;
+        private Texture2D _woodPicaxe;
+        private Texture2D _woodAxe;
+        private Texture2D _woodShovel;
+        private Texture2D _select_controls;
+        private Texture2D _select_play;
+        private Texture2D _select_exit;
+        private Texture2D _controls;
+        private Texture2D _oveja;
+        private Texture2D _toro;
+        private Texture2D _mapNight;
+        private Texture2D _casa;
+        private Texture2D _pantmuerte;
+        private Texture2D _registroacciones;
+        private Texture2D _meatDrop;
+        private Texture2D _error;
 
-        private int[] rockState, treeState, sandState; // 1 = activo, 2 = drop en el suelo, 0 = recolectado
+        private int[] rockState;
+        private int[] treeState;
+        private int[] sandState;
         private int rockCount = 0;
         private int treeCount = 0;
         private int sandCount = 0;
         private int meatCount = 0;
-
-        private Texture2D _player, _rock, _topTree, _bottomTree, _sand, _map, _woodPicaxe, _woodAxe, _woodShovel, _inventory, _menu, _select_play, _select_exit, _select_controls, _controls, _rockDrop, _sandDrop, _treeDrop, _mapNight, _pantmuerte, _oveja, _toro, _pixel, _casa, _registroacciones, _meatDrop, _error;
         private bool casaColocada = false;
+        // [FIN BASE GAME1 - CAMPOS Y TEXTURAS]
+
         private SpriteFont _font;
         private bool _nameFieldActive;
         private readonly Rectangle _nameInputBounds = new Rectangle(37, 410, 288, 44);
@@ -105,6 +102,47 @@ namespace Survival_Story
         private float healthRegenRate = 2.0f;
         private Camera2D _camera;
         private Random _random;
+
+        // [INICIO LLUVIA - VARIABLES]
+        private bool isRaining = false;
+        private float rainCheckTimer = 0f;
+        private float rainCheckInterval = 10f; // Cada cuántos segundos evalúa si llueve o para
+        private float rainChance = 0.35f;      // Probabilidad de empezar a llover
+        private float rainStopChance = 0.50f;  // Probabilidad de dejar de llover
+        private float rainSpeedMultiplier = 0.5f; // Reduce velocidad a la mitad al llover
+
+        private struct RainDrop
+        {
+            public Vector2 Position;
+            public float Speed;
+            public float Length;
+        }
+
+        private RainDrop[] rainDrops;
+        private int rainDropCount = 140;
+        // [FIN LLUVIA - VARIABLES]
+
+        // [INICIO HORNO COLA CIRCULAR - ESTRUCTURA Y VARIABLES]
+        private struct HornoItem
+        {
+            public int ItemEntrada;
+            public int ItemResultado;
+            public float Timer;
+            public float CookDuration;
+        }
+
+        private const int HornoCapacidad = 4;
+        private HornoItem[] hornoCola = new HornoItem[HornoCapacidad];
+        private int hornoHead = 0;  // Indice del primer item en entrar (FIFO)
+        private int hornoTail = 0;  // Indice donde entrara el siguiente item
+        private int hornoCount = 0; // Cantidad actual de items en la cola
+        private List<int> hornoListos = new List<int>(); // Items ya cocinados listos para recoger
+        private float hornoCookTime = 3.0f; // Segundos que tarda cada item en cocinarse
+        // [FIN HORNO COLA CIRCULAR - ESTRUCTURA Y VARIABLES]
+        // [INICIO HORNO TEXTURAS COCINADOS - VARIABLES]
+        private Texture2D _carneCocinada;
+        private Texture2D _vidrio;
+        // [FIN HORNO TEXTURAS COCINADOS - VARIABLES]
 
         private AnimalData oveja;
         private AnimalData toro;
@@ -124,8 +162,17 @@ namespace Survival_Story
         private int playerWidth = 64;
         private int playerHeight = 64;
         private int toolIndicate = -1;
-        private int[] inventoryStorage = new int[10];
-        private Rectangle[] inventorySlot = new Rectangle[10];
+        // [INICIO INVENTARIO MATRIZ - VARIABLES]
+        private int[,] inventoryStorage = new int[2, 5];
+        private Rectangle[,] inventorySlot = new Rectangle[2, 5];
+        // [FIN INVENTARIO MATRIZ - VARIABLES]
+        // [INICIO INVENTARIO OFFSET Y - VARIABLE]
+        private int inventoryItemOffsetY = 10; // Pixeles que bajan los drops dentro del slot
+        // [FIN INVENTARIO OFFSET Y - VARIABLE]
+        // [INICIO INVENTARIO SELECCION Y MOVER - VARIABLES]
+        private int selectedSlotFila = -1;
+        private int selectedSlotCol = -1;
+        // [FIN INVENTARIO SELECCION Y MOVER - VARIABLES]
 
         private float playerTimer;
         private int threshold;
@@ -203,17 +250,20 @@ namespace Survival_Story
 
             if (jugadorGuardado.HasValue)
             {
+                playerId = jugadorGuardado.Value.id;
                 playerPosition = new Vector2(jugadorGuardado.Value.axisX, jugadorGuardado.Value.axisY);
 
                 ConnectDB.sessionData? sesionGuardada = ConnectDB.CargarSesion(jugadorGuardado.Value.id);
 
                 if (sesionGuardada.HasValue)
                 {
+                    sessionId = sesionGuardada.Value.id;
                     currentDay = sesionGuardada.Value.survived_days;
                     dayTimer = sesionGuardada.Value.time_day;
                 }
                 else
                 {
+                    sessionId = 0;
                     currentDay = 1;
                     dayTimer = 0f;
                 }
@@ -222,11 +272,37 @@ namespace Survival_Story
             }
             else
             {
+                playerId = 0;
+                sessionId = 0;
                 playerPosition = new Vector2(710, 710);
                 currentDay = 1;
                 dayTimer = 0f;
             }
         }
+        public class Camera2D
+        {
+            public Matrix Transform { get; private set; }
+            public Vector2 Position { get; set; }
+
+            private GraphicsDevice _graphicsDevice;
+
+            public Camera2D(GraphicsDevice graphicsDevice)
+            {
+                _graphicsDevice = graphicsDevice;
+                Position = Vector2.Zero;
+            }
+
+            public void Follow(Vector2 targetPosition, Viewport viewport)
+            {
+                Position = new Vector2(
+                    targetPosition.X - viewport.Width / 2f,
+                    targetPosition.Y - viewport.Height / 2f
+                );
+
+                Transform = Matrix.CreateTranslation(new Vector3(-Position, 0));
+            }
+        }
+
 
         protected override void Initialize()
         {
@@ -236,10 +312,22 @@ namespace Survival_Story
             Rectangle mountainZone3 = new Rectangle(Epos(24), Epos(9), Epos(4), Epos(4));
             Rectangle mountainZone4 = new Rectangle(Epos(23), Epos(22), Epos(4), Epos(4));
 
-            for (int i = 0; i < inventoryStorage.Length; i++)
+            // [INICIO INVENTARIO MATRIZ - INICIALIZAR]
+            for (int fila = 0; fila < inventoryStorage.GetLength(0); fila++)
             {
-                inventoryStorage[i] = 0;
+                for (int col = 0; col < inventoryStorage.GetLength(1); col++)
+                {
+                    inventoryStorage[fila, col] = 0;
+                }
             }
+            // [FIN INVENTARIO MATRIZ - INICIALIZAR]
+
+            // [INICIO HORNO COLA CIRCULAR - REINICIAR]
+            hornoHead = 0;
+            hornoTail = 0;
+            hornoCount = 0;
+            hornoListos.Clear();
+            // [FIN HORNO COLA CIRCULAR - REINICIAR]
 
             oveja = new AnimalData
             {
@@ -286,6 +374,22 @@ namespace Survival_Story
 
             _camera = new Camera2D(GraphicsDevice);
             _random = new Random();
+
+            // [INICIO LLUVIA - INICIALIZAR GOTAS]
+            rainDrops = new RainDrop[rainDropCount];
+            int initW = GraphicsDevice.Viewport.Width > 0 ? GraphicsDevice.Viewport.Width : 800;
+            int initH = GraphicsDevice.Viewport.Height > 0 ? GraphicsDevice.Viewport.Height : 600;
+
+            for (int i = 0; i < rainDropCount; i++)
+            {
+                rainDrops[i] = new RainDrop
+                {
+                    Position = new Vector2(_random.Next(0, initW), _random.Next(0, initH)),
+                    Speed = _random.Next(550, 850),
+                    Length = _random.Next(10, 20)
+                };
+            }
+            // [FIN LLUVIA - INICIALIZAR GOTAS]
 
             int cantSand = 15;
             int cantRock = 10;
@@ -411,6 +515,10 @@ namespace Survival_Story
             _registroacciones = Content.Load<Texture2D>("assets/images/registro acciones");
             _meatDrop = Content.Load<Texture2D>("assets/images/meatDrop");
             _error = Content.Load<Texture2D>("assets/images/error");
+            // [INICIO HORNO TEXTURAS COCINADOS - CARGAR]
+            _carneCocinada = Content.Load<Texture2D>("assets/images/CarneCocinada");
+            _vidrio = Content.Load<Texture2D>("assets/images/Vidrio");
+            // [FIN HORNO TEXTURAS COCINADOS - CARGAR]
 
             oveja.SpriteSheet = _oveja;
             oveja.DropTexture = _meatDrop;
@@ -428,16 +536,18 @@ namespace Survival_Story
                 }
             }
 
-            inventorySlot[0] = new Rectangle(128, 138, 70, 70);
-            inventorySlot[1] = new Rectangle(247, 138, 70, 70);
-            inventorySlot[2] = new Rectangle(366, 138, 70, 70);
-            inventorySlot[3] = new Rectangle(485, 138, 70, 70);
-            inventorySlot[4] = new Rectangle(597, 138, 70, 70);
-            inventorySlot[5] = new Rectangle(128, 250, 70, 70);
-            inventorySlot[6] = new Rectangle(247, 250, 70, 70);
-            inventorySlot[7] = new Rectangle(366, 250, 70, 70);
-            inventorySlot[8] = new Rectangle(485, 250, 70, 70);
-            inventorySlot[9] = new Rectangle(597, 250, 70, 70);
+            // [INICIO INVENTARIO MATRIZ - SLOTS]
+            inventorySlot[0, 0] = new Rectangle(128, 138, 70, 70);
+            inventorySlot[0, 1] = new Rectangle(247, 138, 70, 70);
+            inventorySlot[0, 2] = new Rectangle(366, 138, 70, 70);
+            inventorySlot[0, 3] = new Rectangle(485, 138, 70, 70);
+            inventorySlot[0, 4] = new Rectangle(597, 138, 70, 70);
+            inventorySlot[1, 0] = new Rectangle(128, 250, 70, 70);
+            inventorySlot[1, 1] = new Rectangle(247, 250, 70, 70);
+            inventorySlot[1, 2] = new Rectangle(366, 250, 70, 70);
+            inventorySlot[1, 3] = new Rectangle(485, 250, 70, 70);
+            inventorySlot[1, 4] = new Rectangle(597, 250, 70, 70);
+            // [FIN INVENTARIO MATRIZ - SLOTS]
         }
 
         void playerStats(GameTime gameTime)
@@ -474,6 +584,127 @@ namespace Survival_Story
             }
         }
 
+        // [INICIO LLUVIA - LOGICA DE CLIMA Y GOTAS]
+        private void updateRain(GameTime gameTime)
+        {
+            float delta = (float)gameTime.ElapsedGameTime.TotalSeconds;
+            rainCheckTimer += delta;
+
+            if (rainCheckTimer >= rainCheckInterval)
+            {
+                rainCheckTimer = 0f;
+                float roll = (float)_random.NextDouble();
+
+                if (!isRaining && roll < rainChance)
+                {
+                    isRaining = true;
+                }
+                else if (isRaining && roll < rainStopChance)
+                {
+                    isRaining = false;
+                }
+            }
+
+            if (!isRaining) return;
+
+            int viewW = GraphicsDevice.Viewport.Width;
+            int viewH = GraphicsDevice.Viewport.Height;
+
+            for (int i = 0; i < rainDrops.Length; i++)
+            {
+                rainDrops[i].Position.X -= rainDrops[i].Speed * 0.25f * delta;
+                rainDrops[i].Position.Y += rainDrops[i].Speed * delta;
+
+                if (rainDrops[i].Position.Y > viewH || rainDrops[i].Position.X < -20f)
+                {
+                    rainDrops[i].Position.X = _random.Next(-50, viewW + 80);
+                    rainDrops[i].Position.Y = _random.Next(-60, -10);
+                }
+            }
+        }
+        // [FIN LLUVIA - LOGICA DE CLIMA Y GOTAS]
+
+        // [INICIO HORNO COLA CIRCULAR - LOGICA FIFO]
+        private bool EncolarHorno(int itemEntrada, int itemResultado)
+        {
+            if (hornoCount >= HornoCapacidad)
+            {
+                MostrarError("Horno lleno");
+                return false;
+            }
+
+            hornoCola[hornoTail] = new HornoItem
+            {
+                ItemEntrada = itemEntrada,
+                ItemResultado = itemResultado,
+                Timer = 0f,
+                CookDuration = hornoCookTime
+            };
+
+            hornoTail = (hornoTail + 1) % HornoCapacidad;
+            hornoCount++;
+            return true;
+        }
+
+        private void ActualizarHorno(GameTime gameTime)
+        {
+            float delta = (float)gameTime.ElapsedGameTime.TotalSeconds;
+
+            // F: mete el primer item cocinable del inventario (4 = carne, 3 = arena)
+            if (_curKS.IsKeyDown(Keys.F) && _oldKS.IsKeyUp(Keys.F))
+            {
+                for (int fila = 0; fila < inventoryStorage.GetLength(0); fila++)
+                {
+                    bool metido = false;
+                    for (int col = 0; col < inventoryStorage.GetLength(1); col++)
+                    {
+                        int item = inventoryStorage[fila, col];
+                        if (item == 4 || item == 3)
+                        {
+                            int resultado = item == 4 ? 5 : 6; // 5 = carne cocida, 6 = vidrio
+                            if (EncolarHorno(item, resultado))
+                            {
+                                inventoryStorage[fila, col] = 0;
+                                RegistrarAccion("Metio item al horno");
+                                metido = true;
+                            }
+                            break;
+                        }
+                    }
+                    if (metido) break;
+                }
+            }
+
+            // G: retira items ya cocinados al inventario si hay espacio
+            if (_curKS.IsKeyDown(Keys.G) && _oldKS.IsKeyUp(Keys.G) && hornoListos.Count > 0)
+            {
+                for (int i = hornoListos.Count - 1; i >= 0; i--)
+                {
+                    if (AgregarAlInventario(hornoListos[i]))
+                    {
+                        hornoListos.RemoveAt(i);
+                        RegistrarAccion("Retiro item del horno");
+                    }
+                }
+            }
+
+            // Solo cocina el item en hornoHead (First In, First Out)
+            if (hornoCount > 0)
+            {
+                hornoCola[hornoHead].Timer += delta;
+
+                if (hornoCola[hornoHead].Timer >= hornoCola[hornoHead].CookDuration)
+                {
+                    hornoListos.Add(hornoCola[hornoHead].ItemResultado);
+                    hornoCola[hornoHead] = default;
+                    hornoHead = (hornoHead + 1) % HornoCapacidad;
+                    hornoCount--;
+                    RegistrarAccion("Termino coccion en horno");
+                }
+            }
+        }
+        // [FIN HORNO COLA CIRCULAR - LOGICA FIFO]
+
         private void GuardarPartida()
         {
             if (string.IsNullOrWhiteSpace(playerName))
@@ -492,6 +723,7 @@ namespace Survival_Story
             {
                 return;
             }
+            playerId = idJugador;
 
             ConnectDB.sessionData sesion = new ConnectDB.sessionData
             {
@@ -500,6 +732,12 @@ namespace Survival_Story
                 time_day = dayTimer
             };
             ConnectDB.Sesion(sesion);
+
+            ConnectDB.sessionData? sesionGuardada = ConnectDB.CargarSesion(idJugador);
+            if (sesionGuardada.HasValue)
+            {
+                sessionId = sesionGuardada.Value.id;
+            }
         }
 
         private void ActualizarAtaqueAnimal(GameTime gameTime, ref AnimalData animal)
@@ -697,6 +935,9 @@ namespace Survival_Story
             else if (!isDead)
             {
                 inventory();
+                // [INICIO INVENTARIO SELECCION Y MOVER - LLAMADA EN UPDATE]
+                actualizarSeleccionInventario(singleClick);
+                // [FIN INVENTARIO SELECCION Y MOVER - LLAMADA EN UPDATE]
                 movementPlayer(gameTime);
                 collision(gameTime);
                 interact();
@@ -707,6 +948,12 @@ namespace Survival_Story
                 ActualizarIAAnimal(gameTime, ref toro);
                 playerStats(gameTime);
                 timeDay(gameTime);
+                // [INICIO LLUVIA - LLAMADA EN UPDATE]
+                updateRain(gameTime);
+                // [FIN LLUVIA - LLAMADA EN UPDATE]
+                // [INICIO HORNO COLA CIRCULAR - LLAMADA EN UPDATE]
+                ActualizarHorno(gameTime);
+                // [FIN HORNO COLA CIRCULAR - LLAMADA EN UPDATE]
 
                 ActualizarAtaqueAnimal(gameTime, ref oveja);
                 ActualizarAtaqueAnimal(gameTime, ref toro);
@@ -731,19 +978,24 @@ namespace Survival_Story
             base.Update(gameTime);
         }
 
+        // [INICIO INVENTARIO MATRIZ - AGREGAR ITEM]
         private bool AgregarAlInventario(int itemID)
         {
-            for (int i = 0; i < inventoryStorage.Length; i++)
+            for (int fila = 0; fila < inventoryStorage.GetLength(0); fila++)
             {
-                if (inventoryStorage[i] == 0)
+                for (int col = 0; col < inventoryStorage.GetLength(1); col++)
                 {
-                    inventoryStorage[i] = itemID;
-                    return true;
+                    if (inventoryStorage[fila, col] == 0)
+                    {
+                        inventoryStorage[fila, col] = itemID;
+                        return true;
+                    }
                 }
             }
             MostrarError("No tienes suficiente espacio");
             return false;
         }
+        // [FIN INVENTARIO MATRIZ - AGREGAR ITEM]
 
         private void checkDropPickup(Rectangle playerHitbox, Vector2[] dropPos, Texture2D dropTex, int[] state, ref int count, int itemID)
         {
@@ -892,28 +1144,85 @@ namespace Survival_Story
             Rectangle fullScreen = new Rectangle(0, 0, GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height);
             _spriteBatch.Draw(_mapNight, fullScreen, null, actualTime, 0.0f, Vector2.Zero, SpriteEffects.None, 0.01f);
 
+            // [INICIO LLUVIA - DIBUJAR GOTAS]
+            if (isRaining && !menuOpen && !isDead)
+            {
+                Color rainColor = new Color(170, 205, 255, 140);
+                for (int i = 0; i < rainDrops.Length; i++)
+                {
+                    Rectangle dropRect = new Rectangle(
+                        (int)rainDrops[i].Position.X,
+                        (int)rainDrops[i].Position.Y,
+                        2,
+                        (int)rainDrops[i].Length
+                    );
+                    _spriteBatch.Draw(_pixel, dropRect, null, rainColor, -0.22f, Vector2.Zero, SpriteEffects.None, 0.75f);
+                }
+            }
+            // [FIN LLUVIA - DIBUJAR GOTAS]
+
+            // [INICIO HORNO COLA CIRCULAR - DIBUJAR ESTADO EN PANTALLA]
+            if (!menuOpen && !isDead)
+            {
+                float progresoActual = hornoCount > 0
+                    ? MathHelper.Clamp(hornoCola[hornoHead].Timer / hornoCola[hornoHead].CookDuration, 0f, 1f)
+                    : 0f;
+                string hornoTexto = $"Horno (FIFO): {hornoCount}/{HornoCapacidad} | Activo: {(int)(progresoActual * 100)}% | Listos: {hornoListos.Count} [F:Meter / G:Sacar]";
+                _spriteBatch.DrawString(_font, hornoTexto, new Vector2(20, 80), Color.White, 0f, Vector2.Zero, 0.9f, SpriteEffects.None, 0.85f);
+            }
+            // [FIN HORNO COLA CIRCULAR - DIBUJAR ESTADO EN PANTALLA]
+
             if (_openInventory && !isDead)
             {
                 _spriteBatch.Draw(_inventory, new Vector2((GraphicsDevice.Viewport.Width / 2) - _inventory.Width / 2 * 7, (GraphicsDevice.Viewport.Height / 2) - _inventory.Height / 2 * 7), null, Color.White, 0.0f, Vector2.Zero, 7.0f, SpriteEffects.None, 0.8f);
-                for (int i = 0; i < inventoryStorage.Length; i++)
+                // [INICIO INVENTARIO MATRIZ - DIBUJAR ITEMS]
+                for (int fila = 0; fila < inventoryStorage.GetLength(0); fila++)
                 {
-                    if (inventoryStorage[i] == 1)
+                    for (int col = 0; col < inventoryStorage.GetLength(1); col++)
                     {
-                        _spriteBatch.Draw(_treeDrop, inventorySlot[i], null, Color.White, 0.0f, Vector2.Zero, SpriteEffects.None, 0.9f);
-                    }
-                    if (inventoryStorage[i] == 2)
-                    {
-                        _spriteBatch.Draw(_rockDrop, inventorySlot[i], null, Color.White, 0.0f, Vector2.Zero, SpriteEffects.None, 0.9f);
-                    }
-                    if (inventoryStorage[i] == 3)
-                    {
-                        _spriteBatch.Draw(_sandDrop, inventorySlot[i], null, Color.White, 0.0f, Vector2.Zero, SpriteEffects.None, 0.9f);
-                    }
-                    if (inventoryStorage[i] == 4)
-                    {
-                        _spriteBatch.Draw(_meatDrop, inventorySlot[i], null, Color.White, 0.0f, Vector2.Zero, SpriteEffects.None, 0.9f);
+                        int item = inventoryStorage[fila, col];
+                        // [INICIO INVENTARIO OFFSET Y - RECTANGULO BAJADO]
+                        Rectangle slotDestino = inventorySlot[fila, col];
+                        slotDestino.Y += inventoryItemOffsetY;
+                        // [FIN INVENTARIO OFFSET Y - RECTANGULO BAJADO]
+                        if (item == 1)
+                        {
+                            _spriteBatch.Draw(_treeDrop, slotDestino, null, Color.White, 0.0f, Vector2.Zero, SpriteEffects.None, 0.9f);
+                        }
+                        if (item == 2)
+                        {
+                            _spriteBatch.Draw(_rockDrop, slotDestino, null, Color.White, 0.0f, Vector2.Zero, SpriteEffects.None, 0.9f);
+                        }
+                        if (item == 3)
+                        {
+                            _spriteBatch.Draw(_sandDrop, slotDestino, null, Color.White, 0.0f, Vector2.Zero, SpriteEffects.None, 0.9f);
+                        }
+                        if (item == 4)
+                        {
+                            _spriteBatch.Draw(_meatDrop, slotDestino, null, Color.White, 0.0f, Vector2.Zero, SpriteEffects.None, 0.9f);
+                        }
+                        // [INICIO HORNO TEXTURAS COCINADOS - DIBUJAR]
+                        if (item == 5)
+                        {
+                            _spriteBatch.Draw(_carneCocinada, slotDestino, null, Color.White, 0.0f, Vector2.Zero, SpriteEffects.None, 0.9f);
+                        }
+                        if (item == 6)
+                        {
+                            _spriteBatch.Draw(_vidrio, slotDestino, null, Color.White, 0.0f, Vector2.Zero, SpriteEffects.None, 0.9f);
+                        }
+                        // [FIN HORNO TEXTURAS COCINADOS - DIBUJAR]
+
+                        // [INICIO INVENTARIO SELECCION Y MOVER - RESALTAR SLOT]
+                        if (fila == selectedSlotFila && col == selectedSlotCol)
+                        {
+                            Rectangle slotRect = inventorySlot[fila, col];
+                            Color highlightColor = new Color(255, 230, 80, 110);
+                            _spriteBatch.Draw(_pixel, slotRect, null, highlightColor, 0f, Vector2.Zero, SpriteEffects.None, 0.85f);
+                        }
+                        // [FIN INVENTARIO SELECCION Y MOVER - RESALTAR SLOT]
                     }
                 }
+                // [FIN INVENTARIO MATRIZ - DIBUJAR ITEMS]
             }
 
             _spriteBatch.DrawString(_font, "Ultima accion: " + ultimaAccion, new Vector2(20, 50), Color.White);
@@ -1042,14 +1351,19 @@ namespace Survival_Story
         private void collision(GameTime gameTime)
         {
             float delta = (float)gameTime.ElapsedGameTime.TotalSeconds;
-            playerPosition.X += movement.X * velocidadGlobal * delta;
+            // [INICIO LLUVIA - VELOCIDAD CON LLUVIA]
+            float currentSpeed = isRaining ? velocidadGlobal * rainSpeedMultiplier : velocidadGlobal;
+            // [FIN LLUVIA - VELOCIDAD CON LLUVIA]
+
+            playerPosition.X += movement.X * currentSpeed * delta;
             if (playerPosition.X < 497) playerPosition.X = 497;
             if (playerPosition.X > 2279) playerPosition.X = 2279;
             Rectangle playerHitboxX = new Rectangle((int)playerPosition.X, (int)playerPosition.Y, playerWidth, playerHeight);
             CheckCollisions(ref playerPosition, ref playerHitboxX, rockPosition, rockState, _rock, movement.X, true);
             CheckCollisions(ref playerPosition, ref playerHitboxX, treePosition, treeState, _bottomTree, movement.X, true);
             CheckCollisions(ref playerPosition, ref playerHitboxX, sandPosition, sandState, _sand, movement.X, true);
-            playerPosition.Y += movement.Y * velocidadGlobal * delta;
+
+            playerPosition.Y += movement.Y * currentSpeed * delta;
             if (playerPosition.Y < 355) playerPosition.Y = 355;
             if (playerPosition.Y > 2137) playerPosition.Y = 2137;
             Rectangle playerHitboxY = new Rectangle((int)playerPosition.X, (int)playerPosition.Y, playerWidth, playerHeight);
@@ -1063,8 +1377,70 @@ namespace Survival_Story
             if (_curKS.IsKeyDown(Keys.Tab) && _oldKS.IsKeyUp(Keys.Tab))
             {
                 _openInventory = !_openInventory;
+                // [INICIO INVENTARIO SELECCION Y MOVER - LIMPIAR AL CERRAR]
+                if (!_openInventory)
+                {
+                    selectedSlotFila = -1;
+                    selectedSlotCol = -1;
+                }
+                // [FIN INVENTARIO SELECCION Y MOVER - LIMPIAR AL CERRAR]
             }
         }
+
+        // [INICIO INVENTARIO SELECCION Y MOVER - LOGICA]
+        private void actualizarSeleccionInventario(bool singleClick)
+        {
+            if (!_openInventory)
+            {
+                selectedSlotFila = -1;
+                selectedSlotCol = -1;
+                return;
+            }
+
+            if (!singleClick) return;
+
+            Point mousePos = _curMS.Position;
+
+            for (int fila = 0; fila < inventorySlot.GetLength(0); fila++)
+            {
+                for (int col = 0; col < inventorySlot.GetLength(1); col++)
+                {
+                    if (inventorySlot[fila, col].Contains(mousePos))
+                    {
+                        if (selectedSlotFila == -1 && selectedSlotCol == -1)
+                        {
+                            // Solo selecciona si el slot tiene algún ítem
+                            if (inventoryStorage[fila, col] != 0)
+                            {
+                                selectedSlotFila = fila;
+                                selectedSlotCol = col;
+                            }
+                        }
+                        else if (selectedSlotFila == fila && selectedSlotCol == col)
+                        {
+                            // Segundo clic en el mismo slot: deselecciona
+                            selectedSlotFila = -1;
+                            selectedSlotCol = -1;
+                        }
+                        else
+                        {
+                            // Intercambia o mueve al slot destino (vacío o con otro ítem)
+                            int itemOrigen = inventoryStorage[selectedSlotFila, selectedSlotCol];
+                            int itemDestino = inventoryStorage[fila, col];
+
+                            inventoryStorage[fila, col] = itemOrigen;
+                            inventoryStorage[selectedSlotFila, selectedSlotCol] = itemDestino;
+
+                            selectedSlotFila = -1;
+                            selectedSlotCol = -1;
+                            RegistrarAccion("Movio item en inventario");
+                        }
+                        return;
+                    }
+                }
+            }
+        }
+        // [FIN INVENTARIO SELECCION Y MOVER - LOGICA]
 
         private bool PuedeMoverAnimal(Vector2 destino)
         {

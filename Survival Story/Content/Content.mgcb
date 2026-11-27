@@ -32,6 +32,18 @@
 /processorParam:TextureFormat=Color
 /build:assets/images/bottomTree.png;assets/images/bottomTree
 
+#begin assets/images/carnecocinada.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:assets/images/carnecocinada.png
+
 #begin assets/images/controlButtons.png
 /importer:TextureImporter
 /processor:TextureProcessor
@@ -116,7 +128,7 @@
 /processorParam:TextureFormat=Color
 /build:assets/images/mapNight.png
 
-#begin assets/images/meatDrop.jpg
+#begin assets/images/meatDrop.png
 /importer:TextureImporter
 /processor:TextureProcessor
 /processorParam:ColorKeyColor=255,0,255,255
@@ -126,7 +138,7 @@
 /processorParam:ResizeToPowerOfTwo=False
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
-/build:assets/images/meatDrop.jpg
+/build:assets/images/meatDrop.png
 
 #begin assets/images/menu.png
 /importer:TextureImporter
@@ -295,6 +307,30 @@
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
 /build:assets/images/TreeDrop.jpg
+
+#begin assets/images/TreeDrop.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:assets/images/TreeDrop.png
+
+#begin assets/images/Vidrio.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:assets/images/Vidrio.png
 
 #begin assets/images/woodAxe.png
 /importer:TextureImporter
