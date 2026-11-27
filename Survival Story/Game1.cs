@@ -1,10 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Entradas;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-using Entradas;
+using MySqlX.XDevAPI;
 
 namespace Survival_Story
 {
@@ -100,6 +101,10 @@ namespace Survival_Story
         private float hungerDecayRate = 0.25f;
         private float energyDecayRate = 0.20f;
         private float healthRegenRate = 2.0f;
+        // [INICIO COMER CARNE COCINADA - VARIABLES]
+        private float cookedMeatHealAmount = 25f;
+        private float cookedMeatEnergyAmount = 30f;
+        // [FIN COMER CARNE COCINADA - VARIABLES]
         private Camera2D _camera;
         private Random _random;
 
@@ -260,12 +265,32 @@ namespace Survival_Story
                     sessionId = sesionGuardada.Value.id;
                     currentDay = sesionGuardada.Value.survived_days;
                     dayTimer = sesionGuardada.Value.time_day;
+                    ConnectDB.playerStateData? estadoGuardado = ConnectDB.CargarEstadoJugador(sessionId);
+
+                    if (estadoGuardado.HasValue)
+                    {
+                        playerHealth = estadoGuardado.Value.health;
+                        playerHunger = estadoGuardado.Value.hunger;
+                        playerEnergy = estadoGuardado.Value.energy;
+                        playerMoral = estadoGuardado.Value.moral;
+                    }
+                    else
+                    {
+                        playerHealth = 100f;
+                        playerHunger = 100f;
+                        playerEnergy = 100f;
+                        playerMoral = "Bueno";
+                    }
                 }
                 else
                 {
                     sessionId = 0;
                     currentDay = 1;
                     dayTimer = 0f;
+                    playerHealth = 100f;
+                    playerHunger = 100f;
+                    playerEnergy = 100f;
+                    playerMoral = "Bueno";
                 }
 
                 System.Diagnostics.Debug.WriteLine("Partida cargada.");
@@ -277,8 +302,13 @@ namespace Survival_Story
                 playerPosition = new Vector2(710, 710);
                 currentDay = 1;
                 dayTimer = 0f;
+                playerHealth = 100f;
+                playerHunger = 100f;
+                playerEnergy = 100f;
+                playerMoral = "Bueno";
             }
         }
+
         public class Camera2D
         {
             public Matrix Transform { get; private set; }
@@ -710,6 +740,7 @@ namespace Survival_Story
             if (string.IsNullOrWhiteSpace(playerName))
                 return;
 
+            // 1. Guardamos los datos del jugador
             ConnectDB.playerData perfil = new ConnectDB.playerData
             {
                 name = playerName.Trim(),
@@ -718,6 +749,7 @@ namespace Survival_Story
             };
             ConnectDB.Jugador(perfil);
 
+            // 2. Obtenemos el ID real del jugador recién guardado/actualizado
             int idJugador = ConnectDB.ObtenerIdJugador(perfil.name);
             if (idJugador <= 0)
             {
@@ -725,6 +757,7 @@ namespace Survival_Story
             }
             playerId = idJugador;
 
+            // 3. Guardamos o actualizamos la sesión vinculada a ese jugador
             ConnectDB.sessionData sesion = new ConnectDB.sessionData
             {
                 id_player = idJugador,
@@ -733,12 +766,43 @@ namespace Survival_Story
             };
             ConnectDB.Sesion(sesion);
 
+            // 4. Cargamos la sesión ANTES de guardar el estado para obtener el 'id_session' real
             ConnectDB.sessionData? sesionGuardada = ConnectDB.CargarSesion(idJugador);
             if (sesionGuardada.HasValue)
             {
                 sessionId = sesionGuardada.Value.id;
+
+                // 5. Ahora sí guardamos el estado usando el 'sessionId' real que corresponde a este jugador
+                ConnectDB.playerStateData sesion2 = new ConnectDB.playerStateData
+                {
+                    id_session = sessionId,
+                    energy = (int)playerEnergy,
+                    health = (int)playerHealth,
+                    hunger = (int)playerHunger,
+                    moral = playerMoral
+                };
+
+                ConnectDB.playerState(sesion2);
             }
+            ConnectDB.sesionResultData resultado = new ConnectDB.sesionResultData
+            {
+                id_session = sessionId,
+                total_days = currentDay > 0 ? currentDay : 1, // Evita error con el CHECK (total_days > 0) de MySQL
+                remain_resources = treeCount + rockCount + sandCount + meatCount, // Reemplazá por tu variable de recursos restantes
+                score = 67 // Reemplazá por tu variable de puntaje
+            };
+            ConnectDB.sesionResult(resultado);
+            ConnectDB.actionLogData registroAccion = new ConnectDB.actionLogData
+            {
+                id_session = sessionId,
+                id_actionTypes = 1, // El ID de la acción en tu tabla actionTypes (ej. 1 = Comer)
+                day = currentDay,
+                result = "nose"       // Máximo 21 caracteres (ej. "Exito", "Fallo", "+20 Energia")
+            };
+
+            ConnectDB.actionLogs(registroAccion);
         }
+
 
         private void ActualizarAtaqueAnimal(GameTime gameTime, ref AnimalData animal)
         {
@@ -938,6 +1002,9 @@ namespace Survival_Story
                 // [INICIO INVENTARIO SELECCION Y MOVER - LLAMADA EN UPDATE]
                 actualizarSeleccionInventario(singleClick);
                 // [FIN INVENTARIO SELECCION Y MOVER - LLAMADA EN UPDATE]
+                // [INICIO COMER CARNE COCINADA - LLAMADA EN UPDATE]
+                comerCarneCocinada();
+                // [FIN COMER CARNE COCINADA - LLAMADA EN UPDATE]
                 movementPlayer(gameTime);
                 collision(gameTime);
                 interact();
@@ -1441,6 +1508,30 @@ namespace Survival_Story
             }
         }
         // [FIN INVENTARIO SELECCION Y MOVER - LOGICA]
+        // [INICIO COMER CARNE COCINADA - LOGICA]
+
+        private void comerCarneCocinada()
+        {
+            if (!_openInventory)
+                return;
+
+            if (selectedSlotFila < 0 || selectedSlotCol < 0)
+                return;
+            // Item 5 = Carne cocinada
+            if (inventoryStorage[selectedSlotFila, selectedSlotCol] == 5)
+            {
+                if (_curKS.IsKeyDown(Keys.Enter) && _oldKS.IsKeyUp(Keys.Enter))
+                {
+                    inventoryStorage[selectedSlotFila, selectedSlotCol] = 0;
+                    selectedSlotFila = -1;
+                    selectedSlotCol = -1;
+                    playerHealth = MathHelper.Clamp(playerHealth + cookedMeatHealAmount, 0f, 100f);
+                    playerEnergy = MathHelper.Clamp(playerEnergy + cookedMeatEnergyAmount, 0f, 100f);
+                    RegistrarAccion("Comio carne cocinada");
+                }
+            }
+        }
+        // [FIN COMER CARNE COCINADA - LOGICA]
 
         private bool PuedeMoverAnimal(Vector2 destino)
         {
